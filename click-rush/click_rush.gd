@@ -175,8 +175,8 @@ func _move_target() -> void:
 	var bounds := play_field.size
 	if bounds == Vector2.ZERO:
 		bounds = Vector2(400, 280)
-	var max_x := max(0.0, bounds.x - TARGET_SIZE.x)
-	var max_y := max(0.0, bounds.y - TARGET_SIZE.y)
+	var max_x: float = max(0.0, bounds.x - TARGET_SIZE.x)
+	var max_y: float = max(0.0, bounds.y - TARGET_SIZE.y)
 	target_button.position = Vector2(randf() * max_x, randf() * max_y)
 
 

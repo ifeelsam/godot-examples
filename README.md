@@ -1,6 +1,6 @@
 # Seeker Arcade
 
-Two tiny, fully playable Godot 4 games that use [Mobile Wallet Kit](https://github.com/ifeelsam/godot-skr-mwa)
+Three fully playable Godot 4 games that use [Mobile Wallet Kit](https://github.com/ifeelsam/godot-skr-mwa)
 to connect a Solana Mobile / Seeker wallet and sign in-game actions.
 
 Each game is a standalone Godot project and vendors the `MobileWalletKit` addon.

@@ -50,3 +50,27 @@ seeker-dash/ui/mobile-controls/Vector/Style A/*
 !seeker-dash/ui/mobile-controls/Vector/Style A/button_circle.svg
 seeker-dash/ui/mobile-controls/Vector/Icons/*
 !seeker-dash/ui/mobile-controls/Vector/Icons/icon_jump.svg
+
+# Kenney pixel platformer — full pack optional locally; repo only tracks PNGs wired in code.
+seeker-dash/ui/pixel-platformer/Preview.png
+seeker-dash/ui/pixel-platformer/SampleA.png
+seeker-dash/ui/pixel-platformer/SampleB.png
+seeker-dash/ui/pixel-platformer/Sprites/
+seeker-dash/ui/pixel-platformer/Tilemap/
+seeker-dash/ui/pixel-platformer/Tiles/tile_*.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0047.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0058.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0059.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0061.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0062.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0064.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0111.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0151.png
+!seeker-dash/ui/pixel-platformer/Tiles/tile_0152.png
+seeker-dash/ui/pixel-platformer/Tiles/Backgrounds/*
+!seeker-dash/ui/pixel-platformer/Tiles/Backgrounds/tile_0000.png
+!seeker-dash/ui/pixel-platformer/Tiles/Backgrounds/tile_0008.png
+!seeker-dash/ui/pixel-platformer/Tiles/Backgrounds/tile_0012.png
+seeker-dash/ui/pixel-platformer/Tiles/Characters/*
+!seeker-dash/ui/pixel-platformer/Tiles/Characters/tile_0000.png
+!seeker-dash/ui/pixel-platformer/Tiles/Characters/tile_0012.png

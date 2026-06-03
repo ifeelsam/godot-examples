@@ -31,3 +31,22 @@ android/
 *.tmp
 graphify-out/
 
+# Kenney mobile controls — full pack optional locally; repo only tracks SVGs wired in code.
+seeker-dash/ui/mobile-controls/Sprites/
+seeker-dash/ui/mobile-controls/Spritesheets/
+seeker-dash/ui/mobile-controls/Preview.png
+seeker-dash/ui/mobile-controls/Vector/Highlights A/
+seeker-dash/ui/mobile-controls/Vector/Highlights B/
+seeker-dash/ui/mobile-controls/Vector/Style B/
+seeker-dash/ui/mobile-controls/Vector/Style C/
+seeker-dash/ui/mobile-controls/Vector/Style D/
+seeker-dash/ui/mobile-controls/Vector/Style E/
+seeker-dash/ui/mobile-controls/Vector/Style F/
+seeker-dash/ui/mobile-controls/Vector/Style G/
+seeker-dash/ui/mobile-controls/Vector/Style H/
+seeker-dash/ui/mobile-controls/Vector/Style A/*
+!seeker-dash/ui/mobile-controls/Vector/Style A/joystick_circle_pad_a.svg
+!seeker-dash/ui/mobile-controls/Vector/Style A/joystick_circle_nub_a.svg
+!seeker-dash/ui/mobile-controls/Vector/Style A/button_circle.svg
+seeker-dash/ui/mobile-controls/Vector/Icons/*
+!seeker-dash/ui/mobile-controls/Vector/Icons/icon_jump.svg

@@ -8,7 +8,7 @@ var patrol_right := 0.0
 var direction := -1.0
 var alive := true
 
-@onready var sprite: ColorRect = $Sprite
+@onready var sprite: Sprite2D = $Sprite
 
 
 func setup(left_x: float, right_x: float, start_right: bool = false) -> void:

@@ -16,7 +16,7 @@ var alive := true
 var coyote := 0.0
 var jump_buffer := 0.0
 
-@onready var sprite: ColorRect = $Sprite
+@onready var sprite: Sprite2D = $Sprite
 @onready var stomp_zone: Area2D = $StompZone
 
 

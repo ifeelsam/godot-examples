@@ -8,8 +8,8 @@ var taken := false
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	var tween := create_tween().set_loops()
-	tween.tween_property($Sprite, "position:y", -4.0, 0.35).set_trans(Tween.TRANS_SINE)
-	tween.tween_property($Sprite, "position:y", 0.0, 0.35).set_trans(Tween.TRANS_SINE)
+	tween.tween_property($Sprite, "position:y", -12.0, 0.35).set_trans(Tween.TRANS_SINE)
+	tween.tween_property($Sprite, "position:y", -8.0, 0.35).set_trans(Tween.TRANS_SINE)
 
 
 func _on_body_entered(body: Node) -> void:

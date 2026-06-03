@@ -10,15 +10,8 @@ const ENEMY_SCENE := preload("res://game/enemy.gd")
 const COIN_SCENE := preload("res://game/coin.gd")
 const FLAG_SCENE := preload("res://game/flag.gd")
 
-const SKY_TOP := Color(0.35, 0.62, 0.95)
-const SKY_BOTTOM := Color(0.55, 0.82, 0.98)
-const GROUND := Color(0.42, 0.28, 0.16)
-const GRASS := Color(0.28, 0.72, 0.32)
-const BRICK := Color(0.78, 0.42, 0.22)
-const CLOUD := Color(1.0, 1.0, 1.0, 0.85)
-
 # Each platform: [x, y, width, height, style]
-# style: "ground" | "brick" | "pipe"
+# style: "ground" | "brick"
 const PLATFORMS: Array = [
 	[0, 520, 520, 80, "ground"],
 	[620, 520, 280, 80, "ground"],
@@ -130,22 +123,13 @@ func get_hud() -> Dictionary:
 
 
 func _build_background() -> void:
-	var sky := ColorRect.new()
-	sky.size = Vector2(3600, 600)
-	sky.color = SKY_BOTTOM
-	sky.z_index = -20
-	add_child(sky)
+	var sky_root := Node2D.new()
+	sky_root.z_index = -20
+	add_child(sky_root)
+	PixelAssets.fill_tiles(sky_root, PixelAssets.TEX_BG_SKY, Vector2(3600, 600))
 
-	for i in range(8):
-		var band := ColorRect.new()
-		band.position = Vector2(0, i * 72)
-		band.size = Vector2(3600, 72)
-		band.color = SKY_TOP.lerp(SKY_BOTTOM, float(i) / 7.0)
-		band.z_index = -19
-		add_child(band)
-
-	for cloud in [Vector2(180, 90), Vector2(620, 130), Vector2(1180, 70), Vector2(1760, 110), Vector2(2380, 85), Vector2(3020, 120)]:
-		_add_cloud(cloud)
+	for cloud_pos in [Vector2(180, 90), Vector2(620, 130), Vector2(1180, 70), Vector2(1760, 110), Vector2(2380, 85), Vector2(3020, 120)]:
+		_add_cloud(cloud_pos)
 
 	for hill in [[120, 520, 220], [980, 520, 280], [2100, 520, 320], [3100, 520, 260]]:
 		_add_hill(Vector2(hill[0], hill[1]), hill[2])
@@ -156,24 +140,22 @@ func _add_cloud(pos: Vector2) -> void:
 	root.position = pos
 	root.z_index = -15
 	add_child(root)
-	for offset in [Vector2(-28, 0), Vector2(0, -8), Vector2(28, 0), Vector2(12, 6)]:
-		var puff := ColorRect.new()
-		puff.color = CLOUD
-		puff.size = Vector2(44, 24)
+	for offset in [Vector2(-36, 0), Vector2(0, -10), Vector2(36, 0), Vector2(16, 8)]:
+		var puff := PixelAssets.make_sprite(PixelAssets.TEX_CLOUD, 2.5)
 		puff.position = offset
 		root.add_child(puff)
 
 
 func _add_hill(foot: Vector2, width: float) -> void:
-	var hill := Polygon2D.new()
-	hill.color = Color(0.22, 0.58, 0.28, 0.55)
-	hill.polygon = PackedVector2Array([
-		foot + Vector2(-width * 0.5, 0),
-		foot + Vector2(0, -width * 0.35),
-		foot + Vector2(width * 0.5, 0),
-	])
-	hill.z_index = -12
-	add_child(hill)
+	var root := Node2D.new()
+	root.position = foot + Vector2(-width * 0.5, -PixelAssets.TILE_WORLD * 0.5)
+	root.z_index = -12
+	add_child(root)
+	var tiles := maxi(2, int(width / PixelAssets.TILE_WORLD))
+	for i in range(tiles):
+		var hill := PixelAssets.make_sprite(PixelAssets.TEX_HILL)
+		hill.position = Vector2(i * PixelAssets.TILE_WORLD + PixelAssets.TILE_WORLD * 0.5, PixelAssets.TILE_WORLD * 0.5)
+		root.add_child(hill)
 
 
 func _build_platforms() -> void:
@@ -193,25 +175,12 @@ func _add_platform(pos: Vector2, size: Vector2, style: String) -> void:
 	shape.position = size * 0.5
 	body.add_child(shape)
 
-	var visual := ColorRect.new()
-	visual.size = size
+	var visual := Node2D.new()
+	body.add_child(visual)
 	if style == "ground":
-		visual.color = GROUND
-		body.add_child(visual)
-		var grass := ColorRect.new()
-		grass.size = Vector2(size.x, 10)
-		grass.color = GRASS
-		body.add_child(grass)
-	elif style == "brick":
-		visual.color = BRICK
-		body.add_child(visual)
-		var stripe_count := int(size.x / 24.0)
-		for i in range(stripe_count):
-			var mark := ColorRect.new()
-			mark.color = BRICK.darkened(0.12)
-			mark.size = Vector2(20, 4)
-			mark.position = Vector2(i * 24.0 + 2, 4)
-			body.add_child(mark)
+		PixelAssets.build_ground_visual(visual, size)
+	else:
+		PixelAssets.build_brick_visual(visual, size)
 
 
 func _spawn_coins() -> void:
@@ -230,18 +199,10 @@ func _spawn_coins() -> void:
 		shape.shape = circle
 		coin.add_child(shape)
 
-		var sprite := ColorRect.new()
+		var sprite := PixelAssets.make_sprite(PixelAssets.TEX_COIN)
 		sprite.name = "Sprite"
-		sprite.size = Vector2(20, 20)
-		sprite.position = Vector2(-10, -10)
-		sprite.color = Color(1.0, 0.86, 0.18)
+		sprite.position = Vector2(0, -8)
 		coin.add_child(sprite)
-
-		var shine := ColorRect.new()
-		shine.size = Vector2(6, 6)
-		shine.position = Vector2(-4, -6)
-		shine.color = Color(1, 1, 0.75)
-		coin.add_child(shine)
 
 		coin.collected.connect(_on_coin_collected)
 		add_child(coin)
@@ -263,22 +224,10 @@ func _spawn_enemies() -> void:
 		shape.position = Vector2(0, -14)
 		enemy.add_child(shape)
 
-		var sprite := ColorRect.new()
+		var sprite := PixelAssets.make_sprite(PixelAssets.TEX_ENEMY)
 		sprite.name = "Sprite"
-		sprite.size = Vector2(28, 28)
-		sprite.position = Vector2(-14, -28)
-		sprite.color = Color(0.85, 0.18, 0.18)
+		sprite.position = Vector2(0, -18)
 		enemy.add_child(sprite)
-
-		var eye_l := ColorRect.new()
-		eye_l.size = Vector2(6, 8)
-		eye_l.position = Vector2(-8, -22)
-		eye_l.color = Color.WHITE
-		enemy.add_child(eye_l)
-
-		var eye_r := eye_l.duplicate()
-		eye_r.position = Vector2(2, -22)
-		enemy.add_child(eye_r)
 
 		enemy.setup(data["left"], data["right"], randf() > 0.5)
 		add_child(enemy)
@@ -299,17 +248,9 @@ func _spawn_flag() -> void:
 	shape.position = Vector2(0, -48)
 	flag.add_child(shape)
 
-	var pole := ColorRect.new()
-	pole.size = Vector2(6, 96)
-	pole.position = Vector2(-3, -96)
-	pole.color = Color(0.75, 0.75, 0.78)
-	flag.add_child(pole)
-
-	var banner := ColorRect.new()
-	banner.size = Vector2(34, 22)
-	banner.position = Vector2(3, -88)
-	banner.color = Color(0.95, 0.2, 0.35)
-	flag.add_child(banner)
+	var sprite := PixelAssets.make_sprite(PixelAssets.TEX_FLAG, 2.5)
+	sprite.position = Vector2(0, -54)
+	flag.add_child(sprite)
 
 	flag.reached.connect(_on_flag_reached)
 	add_child(flag)
@@ -331,18 +272,10 @@ func _spawn_player() -> void:
 	shape.position = Vector2(0, -15)
 	player.add_child(shape)
 
-	var sprite := ColorRect.new()
+	var sprite := PixelAssets.make_sprite(PixelAssets.TEX_PLAYER)
 	sprite.name = "Sprite"
-	sprite.size = Vector2(22, 30)
-	sprite.position = Vector2(-11, -30)
-	sprite.color = Color(0.18, 0.45, 0.95)
+	sprite.position = Vector2(0, -18)
 	player.add_child(sprite)
-
-	var cap := ColorRect.new()
-	cap.size = Vector2(24, 8)
-	cap.position = Vector2(-12, -32)
-	cap.color = Color(0.95, 0.25, 0.2)
-	player.add_child(cap)
 
 	var stomp := Area2D.new()
 	stomp.name = "StompZone"
@@ -385,7 +318,6 @@ func _on_enemy_touch_player(body: Node, enemy: Node) -> void:
 		return
 	if body != player or not enemy.alive:
 		return
-	# Stomps from above are handled by the player's stomp zone.
 	if player.velocity.y > 0 and player.global_position.y < enemy.global_position.y - 8:
 		return
 	player.take_damage()

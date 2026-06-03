@@ -45,9 +45,9 @@ seeker-dash/ui/mobile-controls/Vector/Style F/
 seeker-dash/ui/mobile-controls/Vector/Style G/
 seeker-dash/ui/mobile-controls/Vector/Style H/
 seeker-dash/ui/mobile-controls/Vector/Style A/*
-!seeker-dash/ui/mobile-controls/Vector/Style A/joystick_circle_pad_a.svg
-!seeker-dash/ui/mobile-controls/Vector/Style A/joystick_circle_nub_a.svg
 !seeker-dash/ui/mobile-controls/Vector/Style A/button_circle.svg
+!seeker-dash/ui/mobile-controls/Vector/Style A/direction_left.svg
+!seeker-dash/ui/mobile-controls/Vector/Style A/direction_right.svg
 seeker-dash/ui/mobile-controls/Vector/Icons/*
 !seeker-dash/ui/mobile-controls/Vector/Icons/icon_jump.svg
 

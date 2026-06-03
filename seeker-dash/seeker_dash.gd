@@ -149,10 +149,20 @@ func _build_ui() -> void:
 
 	touch_bar = HBoxContainer.new()
 	touch_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	touch_bar.offset_top = -88
+	touch_bar.offset_top = -96
 	touch_bar.add_theme_constant_override("separation", 12)
 	touch_bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	game_root.add_child(touch_bar)
+
+	var touch_back := PanelContainer.new()
+	touch_back.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	touch_back.offset_top = -96
+	var touch_style := StyleBoxFlat.new()
+	touch_style.bg_color = Color(0.06, 0.08, 0.14, 0.75)
+	touch_style.set_corner_radius_all(0)
+	touch_back.add_theme_stylebox_override("panel", touch_style)
+	game_root.add_child(touch_back)
+	game_root.move_child(touch_back, game_root.get_child_count() - 2)
 
 	left_button = _make_touch_button("◀")
 	left_button.button_down.connect(func(): move_left = true)

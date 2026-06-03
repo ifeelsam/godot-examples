@@ -28,3 +28,4 @@ android/
 # OS / editor
 .DS_Store
 *.tmp
+graphify-out/

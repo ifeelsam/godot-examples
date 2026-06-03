@@ -9,6 +9,20 @@ android/
 *.aab
 *.idsig
 
+# Godot iOS export outputs (large generated binaries; re-export locally)
+**/Click Rush Seeker/**
+!**/Click Rush Seeker/.gdignore
+**/Click Rush Seeker.xcodeproj/**
+!**/Click Rush Seeker.xcodeproj/.gdignore
+**/Click Rush Seeker.xcframework/**
+!**/Click Rush Seeker.xcframework/.gdignore
+**/MoltenVK.xcframework/**
+!**/MoltenVK.xcframework/.gdignore
+**/*.pck
+**/*.ipa
+**/*.xcarchive
+**/PrivacyInfo.xcprivacy
+
 # OS / editor
 .DS_Store
 *.tmp

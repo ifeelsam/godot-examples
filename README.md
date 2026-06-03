@@ -39,6 +39,36 @@ To export to Android, build the Mobile Wallet Kit Android plugin (see the
 [SDK repo](https://github.com/ifeelsam/godot-skr-mwa)); the prebuilt debug and
 release AARs are vendored under each game's `addons/MobileWalletKit/`.
 
+### iOS export (Click Rush)
+
+Godot writes an Xcode tree into `click-rush/` (for example `Click Rush Seeker/`
+and `Click Rush Seeker.xcodeproj/`). Those folders are gitignored and marked with
+`.gdignore` so the editor does not treat them as `res://` game assets.
+
+**Archive failed — provisioning:** If `xcodebuild` reports *no devices* or *no
+profiles for `com.seeker.arcade.clickrush`*, Apple cannot create a development
+provisioning profile until at least one device is registered for team
+`application/app_store_team_id` in the iOS export preset:
+
+1. Connect an iPhone/iPad with a USB cable (or register its UDID manually at
+   [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/devices/list)).
+2. Open `click-rush/Click Rush Seeker.xcodeproj` in Xcode, select the
+   **Click Rush Seeker** target → **Signing & Capabilities**, choose your team,
+   and enable **Automatically manage signing**.
+3. In [Identifiers](https://developer.apple.com/account/resources/identifiers/list),
+   ensure an App ID exists for `com.seeker.arcade.clickrush`.
+4. Re-run **Project → Export → iOS** in Godot, or build/archive from Xcode.
+
+To iterate on signing without Godot invoking `xcodebuild`, enable **Export project
+only** on the iOS preset, export once, then archive from Xcode after signing is
+healthy.
+
+**Harmless warnings:** `Can't open file from path 'res://Click Rush Seeker/...'`
+before export usually means a stale export folder; re-export or delete
+`Click Rush Seeker*` under `click-rush/` and reload the project.
+`application/boot_splash/fullsize` comes from a Godot/iOS template version mismatch
+and does not block the build.
+
 ## How wallet usage works in code
 
 Both games create a `WalletAdapter`, connect its signals, and call:

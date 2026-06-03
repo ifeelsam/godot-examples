@@ -2,8 +2,8 @@ extends Control
 
 signal direction_changed(direction: Vector2)
 
-const PAD_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/joystick_circle_pad_a.svg")
-const NUB_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/joystick_circle_nub_a.svg")
+const PAD_TEXTURE := PixelAssets.TEX_JOY_BASE
+const NUB_TEXTURE := PixelAssets.TEX_JOY_KNOB
 
 @export var pad_size := 128.0
 @export var nub_size := 56.0
@@ -117,5 +117,6 @@ func _make_sprite(texture: Texture2D, size: float) -> TextureRect:
 	sprite.size = Vector2(size, size)
 	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return sprite

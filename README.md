@@ -85,4 +85,4 @@ Both games create a `WalletAdapter`, connect its signals, and call:
 - `sign_message(text)` — sign checkpoint proofs and level-clear receipts
 - `disconnect_wallet()` — end the session
 
-See `coin_flip.gd` and `click_rush.gd` for the full, commented flow.
+See `seeker_dash.gd`, `coin_flip.gd`, and `click_rush.gd` for the full, commented flow.

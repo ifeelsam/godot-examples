@@ -4,6 +4,7 @@ signal direction_changed(direction: float)
 
 const LEFT_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/direction_left.svg")
 const RIGHT_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/direction_right.svg")
+const TOUCH_BUTTON_SCRIPT := preload("res://ui/touch_texture_button.gd")
 
 @export var button_size := 96.0
 
@@ -22,13 +23,11 @@ func _ready() -> void:
 	add_child(row)
 
 	var left := _make_button(LEFT_TEXTURE)
-	left.button_down.connect(func(): _set_left(true))
-	left.button_up.connect(func(): _set_left(false))
+	left.pressed_changed.connect(func(held: bool): _set_left(held))
 	row.add_child(left)
 
 	var right := _make_button(RIGHT_TEXTURE)
-	right.button_down.connect(func(): _set_right(true))
-	right.button_up.connect(func(): _set_right(false))
+	right.pressed_changed.connect(func(held: bool): _set_right(held))
 	row.add_child(right)
 
 
@@ -55,13 +54,9 @@ func _update_direction() -> void:
 	emit_signal("direction_changed", _direction)
 
 
-func _make_button(texture: Texture2D) -> TextureButton:
-	var button := TextureButton.new()
-	button.custom_minimum_size = Vector2(button_size, button_size)
-	button.texture_normal = texture
-	button.texture_pressed = texture
-	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	button.focus_mode = Control.FOCUS_NONE
-	button.button_down.connect(func(): button.modulate = Color(0.82, 0.82, 0.82, 1.0))
-	button.button_up.connect(func(): button.modulate = Color(1, 1, 1, 1))
+func _make_button(texture: Texture2D) -> Control:
+	var button := Control.new()
+	button.set_script(TOUCH_BUTTON_SCRIPT)
+	button.normal_texture = texture
+	button.button_size = button_size
 	return button

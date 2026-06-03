@@ -6,6 +6,7 @@ extends Control
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
 const DIRECTION_PAD_SCRIPT := preload("res://ui/direction_pad.gd")
+const TOUCH_BUTTON_SCRIPT := preload("res://ui/touch_texture_button.gd")
 const JUMP_BUTTON_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/button_circle.svg")
 const JUMP_ICON_TEXTURE := preload("res://ui/mobile-controls/Vector/Icons/icon_jump.svg")
 const PIXEL := preload("res://game/pixel_assets.gd")
@@ -35,7 +36,7 @@ var sub_viewport: SubViewport
 var world: Node2D
 var touch_controls: Control
 var direction_pad: Control
-var jump_button: TextureButton
+var jump_button: Control
 var toast_label: Label
 
 var playing := false
@@ -173,14 +174,7 @@ func _build_ui() -> void:
 	jump_button.offset_top = -112
 	jump_button.offset_right = -16
 	jump_button.offset_bottom = -16
-	jump_button.button_down.connect(func():
-		jump_held = true
-		jump_button.modulate = Color(0.82, 0.82, 0.82, 1.0)
-	)
-	jump_button.button_up.connect(func():
-		jump_held = false
-		jump_button.modulate = Color(1, 1, 1, 1)
-	)
+	jump_button.pressed_changed.connect(func(held: bool): jump_held = held)
 	touch_controls.add_child(jump_button)
 
 	results_panel = _make_results_panel()
@@ -304,13 +298,11 @@ func _make_results_panel() -> PanelContainer:
 	return panel
 
 
-func _make_jump_button() -> TextureButton:
-	var button := TextureButton.new()
-	button.custom_minimum_size = Vector2(96, 96)
-	button.texture_normal = JUMP_BUTTON_TEXTURE
-	button.texture_pressed = JUMP_BUTTON_TEXTURE
-	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	button.focus_mode = Control.FOCUS_NONE
+func _make_jump_button() -> Control:
+	var button := Control.new()
+	button.set_script(TOUCH_BUTTON_SCRIPT)
+	button.normal_texture = JUMP_BUTTON_TEXTURE
+	button.button_size = 96.0
 
 	var icon := TextureRect.new()
 	icon.texture = JUMP_ICON_TEXTURE

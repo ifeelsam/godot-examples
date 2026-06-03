@@ -155,6 +155,8 @@ func _make_button(text: String, fill: Color) -> Button:
 	normal.set_corner_radius_all(12)
 	normal.content_margin_top = 10
 	normal.content_margin_bottom = 10
+	normal.shadow_color = Color(0.1, 0.3, 0.7, 0.35)
+	normal.shadow_size = 6
 	button.add_theme_stylebox_override("normal", normal)
 
 	var hover := normal.duplicate()

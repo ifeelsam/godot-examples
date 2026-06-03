@@ -5,6 +5,8 @@ signal skip_pressed
 
 enum State { IDLE, CONNECTING, CONNECTED, ERROR }
 
+const PIXEL := preload("res://game/pixel_assets.gd")
+
 var _panel: PanelContainer
 var _title_label: Label
 var _body_label: Label
@@ -33,12 +35,12 @@ func _ready() -> void:
 	center.add_child(_panel)
 
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.11, 0.14, 0.24)
-	panel_style.border_color = Color(0.35, 0.55, 0.95, 0.55)
-	panel_style.set_border_width_all(2)
-	panel_style.set_corner_radius_all(20)
+	panel_style.bg_color = Color(0.11, 0.14, 0.24, 0.98)
+	panel_style.border_color = Color(0.55, 0.75, 0.35, 0.85)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(4)
 	panel_style.shadow_color = Color(0, 0, 0, 0.45)
-	panel_style.shadow_size = 18
+	panel_style.shadow_size = 12
 	panel_style.content_margin_left = 28
 	panel_style.content_margin_right = 28
 	panel_style.content_margin_top = 28
@@ -49,18 +51,35 @@ func _ready() -> void:
 	stack.add_theme_constant_override("separation", 14)
 	_panel.add_child(stack)
 
+	var hero := HBoxContainer.new()
+	hero.alignment = BoxContainer.ALIGNMENT_CENTER
+	hero.add_theme_constant_override("separation", 12)
+	stack.add_child(hero)
+
+	var player_icon := TextureRect.new()
+	player_icon.texture = PIXEL.TEX_PLAYER
+	player_icon.custom_minimum_size = Vector2(36, 36)
+	player_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_icon.stretch_mode = TextureRect.STRETCH_STRETCH
+	player_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	hero.add_child(player_icon)
+
+	var title_col := VBoxContainer.new()
+	title_col.add_theme_constant_override("separation", 2)
+	hero.add_child(title_col)
+
 	var badge := Label.new()
 	badge.text = "SOLANA MOBILE"
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.add_theme_font_size_override("font_size", 11)
-	badge.add_theme_color_override("font_color", Color(0.45, 0.82, 0.95))
-	stack.add_child(badge)
+	badge.add_theme_color_override("font_color", Color(0.55, 0.9, 0.45))
+	title_col.add_child(badge)
 
 	_title_label = Label.new()
 	_title_label.text = "Seeker Dash"
 	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title_label.add_theme_font_size_override("font_size", 34)
-	stack.add_child(_title_label)
+	title_col.add_child(_title_label)
 
 	_body_label = Label.new()
 	_body_label.text = "Connect your wallet to sign checkpoint proofs and a level-clear receipt as you play."
@@ -86,7 +105,7 @@ func _ready() -> void:
 	_address_label.add_theme_color_override("font_color", Color(0.55, 0.95, 0.75))
 	stack.add_child(_address_label)
 
-	_connect_button = _make_button("Connect Wallet", Color(0.22, 0.52, 0.95))
+	_connect_button = _make_button("Connect Wallet", Color(0.28, 0.58, 0.32))
 	_connect_button.pressed.connect(func(): emit_signal("connect_pressed"))
 	stack.add_child(_connect_button)
 
@@ -152,11 +171,13 @@ func _make_button(text: String, fill: Color) -> Button:
 
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = fill
-	normal.set_corner_radius_all(12)
+	normal.border_color = fill.darkened(0.25)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(4)
 	normal.content_margin_top = 10
 	normal.content_margin_bottom = 10
-	normal.shadow_color = Color(0.1, 0.3, 0.7, 0.35)
-	normal.shadow_size = 6
+	normal.shadow_color = Color(0.05, 0.15, 0.05, 0.35)
+	normal.shadow_size = 4
 	button.add_theme_stylebox_override("normal", normal)
 
 	var hover := normal.duplicate()

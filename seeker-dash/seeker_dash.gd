@@ -6,8 +6,7 @@ extends Control
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
 const VIRTUAL_JOYSTICK_SCRIPT := preload("res://ui/virtual_joystick.gd")
-const JUMP_BUTTON_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/button_circle.svg")
-const JUMP_ICON_TEXTURE := preload("res://ui/mobile-controls/Vector/Icons/icon_jump.svg")
+const PIXEL := preload("res://game/pixel_assets.gd")
 const SAVE_PATH := "user://seeker_dash.save"
 const CHECKPOINT_COINS := 5
 
@@ -99,9 +98,14 @@ func _setup_wallet() -> void:
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
-	bg.color = COLOR_BG
+	bg.color = Color(0.04, 0.06, 0.1)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
+
+	var bg_tiles := PIXEL.make_texture_rect(PIXEL.TEX_BG_SKY, get_viewport_rect().size)
+	bg_tiles.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_tiles.modulate = Color(0.55, 0.55, 0.65, 0.35)
+	add_child(bg_tiles)
 
 	game_root = Control.new()
 	game_root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -214,10 +218,10 @@ func _make_hud_bar() -> PanelContainer:
 	bar.offset_bottom = 72
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = COLOR_HUD
+	style.bg_color = Color(0.08, 0.1, 0.16, 0.92)
 	style.set_corner_radius_all(0)
-	style.border_color = Color(0.25, 0.35, 0.55, 0.35)
-	style.set_border_width_all(1)
+	style.border_color = Color(0.45, 0.65, 0.35, 0.65)
+	style.set_border_width_all(2)
 	style.content_margin_left = 18
 	style.content_margin_right = 18
 	style.content_margin_top = 10
@@ -225,8 +229,16 @@ func _make_hud_bar() -> PanelContainer:
 	bar.add_theme_stylebox_override("panel", style)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 24)
+	row.add_theme_constant_override("separation", 16)
 	bar.add_child(row)
+
+	var coin_icon := TextureRect.new()
+	coin_icon.texture = PIXEL.TEX_COIN_HUD
+	coin_icon.custom_minimum_size = Vector2(28, 28)
+	coin_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	coin_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	coin_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	row.add_child(coin_icon)
 
 	var stats := VBoxContainer.new()
 	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -250,10 +262,10 @@ func _make_results_panel() -> PanelContainer:
 	panel.custom_minimum_size = Vector2(420, 0)
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.13, 0.22, 0.94)
-	style.border_color = COLOR_GOLD
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(18)
+	style.bg_color = Color(0.1, 0.13, 0.22, 0.96)
+	style.border_color = Color(0.55, 0.75, 0.35)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(4)
 	style.content_margin_left = 24
 	style.content_margin_right = 24
 	style.content_margin_top = 24
@@ -264,11 +276,24 @@ func _make_results_panel() -> PanelContainer:
 	stack.add_theme_constant_override("separation", 12)
 	panel.add_child(stack)
 
+	var hero_row := HBoxContainer.new()
+	hero_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	hero_row.add_theme_constant_override("separation", 10)
+	stack.add_child(hero_row)
+
+	var flag_icon := TextureRect.new()
+	flag_icon.texture = PIXEL.TEX_FLAG
+	flag_icon.custom_minimum_size = Vector2(36, 36)
+	flag_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flag_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flag_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	hero_row.add_child(flag_icon)
+
 	var title := Label.new()
 	title.text = "Level Complete"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
-	stack.add_child(title)
+	hero_row.add_child(title)
 
 	panel.set_meta("stack", stack)
 
@@ -278,24 +303,21 @@ func _make_results_panel() -> PanelContainer:
 func _make_jump_button() -> TextureButton:
 	var button := TextureButton.new()
 	button.custom_minimum_size = Vector2(96, 96)
-	button.texture_normal = JUMP_BUTTON_TEXTURE
-	button.texture_pressed = JUMP_BUTTON_TEXTURE
+	button.texture_normal = PIXEL.TEX_SPRING
+	button.texture_pressed = PIXEL.TEX_SPRING
 	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	button.focus_mode = Control.FOCUS_NONE
 
-	var icon := TextureRect.new()
-	icon.texture = JUMP_ICON_TEXTURE
-	icon.custom_minimum_size = Vector2(42, 42)
-	icon.size = Vector2(42, 42)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.set_anchors_preset(Control.PRESET_CENTER)
-	icon.offset_left = -21
-	icon.offset_top = -21
-	icon.offset_right = 21
-	icon.offset_bottom = 21
-	button.add_child(icon)
+	var label := Label.new()
+	label.text = "JUMP"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_color_override("font_color", Color(0.15, 0.2, 0.12))
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	button.add_child(label)
 
 	return button
 
@@ -311,18 +333,20 @@ func _make_touch_button(text: String) -> Button:
 	button.focus_mode = Control.FOCUS_NONE
 
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.16, 0.2, 0.3, 0.92)
-	normal.set_corner_radius_all(14)
+	normal.bg_color = Color(0.22, 0.48, 0.28, 0.95)
+	normal.border_color = Color(0.12, 0.28, 0.14)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(4)
 	normal.content_margin_top = 8
 	normal.content_margin_bottom = 8
 	button.add_theme_stylebox_override("normal", normal)
 
 	var hover := normal.duplicate()
-	hover.bg_color = Color(0.22, 0.28, 0.4, 0.95)
+	hover.bg_color = Color(0.28, 0.58, 0.34, 0.98)
 	button.add_theme_stylebox_override("hover", hover)
 
 	var pressed := normal.duplicate()
-	pressed.bg_color = Color(0.12, 0.16, 0.24, 0.95)
+	pressed.bg_color = Color(0.16, 0.36, 0.2, 0.98)
 	button.add_theme_stylebox_override("pressed", pressed)
 
 	return button

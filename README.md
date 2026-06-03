@@ -14,6 +14,13 @@ Cash out to bank the pot before your luck runs out. Best streak and best bank ar
 saved between sessions. When a wallet is connected, each cash-out is signed by the
 wallet as a "proof of bank" receipt.
 
+### Seeker Dash (`seeker-dash/`)
+A side-scrolling platformer — run, jump, collect coins, stomp enemies, and reach
+the flag at the end of the level. Touch controls (or keyboard) work on desktop and
+mobile. When a wallet is connected, every 5 coins triggers a **checkpoint signature**
+(mid-run MWA demo), and crossing the finish line signs a **level-clear receipt**
+with your time, coin count, stomps, and deaths.
+
 ### Click Rush (`click-rush/`)
 A 30-second reaction game. Targets pop up, shrink, and vanish — tap them before
 they disappear to build a combo multiplier (up to x8). Dodge the red bombs and

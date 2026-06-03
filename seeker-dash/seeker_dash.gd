@@ -6,9 +6,12 @@ extends Control
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
 const VIRTUAL_JOYSTICK_SCRIPT := preload("res://ui/virtual_joystick.gd")
+const JUMP_BUTTON_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/button_circle.svg")
+const JUMP_ICON_TEXTURE := preload("res://ui/mobile-controls/Vector/Icons/icon_jump.svg")
 const PIXEL := preload("res://game/pixel_assets.gd")
 const SAVE_PATH := "user://seeker_dash.save"
 const CHECKPOINT_COINS := 5
+const TOUCH_CONTROL_OPACITY := 0.55
 
 const COLOR_BG := Color(0.05, 0.07, 0.12)
 const COLOR_HUD := Color(0.08, 0.1, 0.16, 0.88)
@@ -151,6 +154,7 @@ func _build_ui() -> void:
 	touch_controls = Control.new()
 	touch_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
 	touch_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	touch_controls.modulate = Color(1, 1, 1, TOUCH_CONTROL_OPACITY)
 	game_root.add_child(touch_controls)
 
 	virtual_joystick = Control.new()
@@ -303,21 +307,24 @@ func _make_results_panel() -> PanelContainer:
 func _make_jump_button() -> TextureButton:
 	var button := TextureButton.new()
 	button.custom_minimum_size = Vector2(96, 96)
-	button.texture_normal = PIXEL.TEX_SPRING
-	button.texture_pressed = PIXEL.TEX_SPRING
+	button.texture_normal = JUMP_BUTTON_TEXTURE
+	button.texture_pressed = JUMP_BUTTON_TEXTURE
 	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	button.focus_mode = Control.FOCUS_NONE
 
-	var label := Label.new()
-	label.text = "JUMP"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 11)
-	label.add_theme_color_override("font_color", Color(0.15, 0.2, 0.12))
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	button.add_child(label)
+	var icon := TextureRect.new()
+	icon.texture = JUMP_ICON_TEXTURE
+	icon.custom_minimum_size = Vector2(42, 42)
+	icon.size = Vector2(42, 42)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.set_anchors_preset(Control.PRESET_CENTER)
+	icon.offset_left = -21
+	icon.offset_top = -21
+	icon.offset_right = 21
+	icon.offset_bottom = 21
+	button.add_child(icon)
 
 	return button
 

@@ -5,6 +5,7 @@ extends Control
 
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
+const VIRTUAL_JOYSTICK_SCRIPT := preload("res://ui/virtual_joystick.gd")
 const SAVE_PATH := "user://seeker_dash.save"
 const CHECKPOINT_COINS := 5
 
@@ -28,16 +29,14 @@ var play_again_button: Button
 var viewport_container: SubViewportContainer
 var sub_viewport: SubViewport
 var world: Node2D
-var touch_bar: HBoxContainer
-var left_button: Button
-var right_button: Button
+var touch_controls: Control
+var virtual_joystick: Control
 var jump_button: Button
 var toast_label: Label
 
 var playing := false
 var awaiting_sign := false
-var move_left := false
-var move_right := false
+var touch_direction := 0.0
 var jump_held := false
 var last_checkpoint := 0
 var best_time := 9999.0
@@ -59,12 +58,8 @@ func _process(_delta: float) -> void:
 	if world == null:
 		return
 
-	var direction := 0.0
-	if move_left:
-		direction -= 1.0
-	if move_right:
-		direction += 1.0
-	if not move_left and not move_right:
+	var direction := touch_direction
+	if absf(direction) < 0.05:
 		direction = Input.get_axis("move_left", "move_right")
 
 	var wants_jump := jump_held or Input.is_action_pressed("jump")
@@ -147,39 +142,30 @@ func _build_ui() -> void:
 	disconnect_button.pressed.connect(_on_disconnect_pressed)
 	wallet_box.add_child(disconnect_button)
 
-	touch_bar = HBoxContainer.new()
-	touch_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	touch_bar.offset_top = -96
-	touch_bar.add_theme_constant_override("separation", 12)
-	touch_bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	game_root.add_child(touch_bar)
+	touch_controls = Control.new()
+	touch_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
+	touch_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	game_root.add_child(touch_controls)
 
-	var touch_back := PanelContainer.new()
-	touch_back.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	touch_back.offset_top = -96
-	var touch_style := StyleBoxFlat.new()
-	touch_style.bg_color = Color(0.06, 0.08, 0.14, 0.75)
-	touch_style.set_corner_radius_all(0)
-	touch_back.add_theme_stylebox_override("panel", touch_style)
-	game_root.add_child(touch_back)
-	game_root.move_child(touch_back, game_root.get_child_count() - 2)
+	virtual_joystick = Control.new()
+	virtual_joystick.set_script(VIRTUAL_JOYSTICK_SCRIPT)
+	virtual_joystick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	virtual_joystick.offset_left = 16
+	virtual_joystick.offset_top = -184
+	virtual_joystick.offset_right = 184
+	virtual_joystick.offset_bottom = -16
+	virtual_joystick.direction_changed.connect(_on_joystick_direction)
+	touch_controls.add_child(virtual_joystick)
 
-	left_button = _make_touch_button("◀")
-	left_button.button_down.connect(func(): move_left = true)
-	left_button.button_up.connect(func(): move_left = false)
-	touch_bar.add_child(left_button)
-
-	right_button = _make_touch_button("▶")
-	right_button.button_down.connect(func(): move_right = true)
-	right_button.button_up.connect(func(): move_right = false)
-	touch_bar.add_child(right_button)
-
-	jump_button = _make_touch_button("Jump")
-	jump_button.modulate = Color(0.55, 0.95, 0.78)
-	jump_button.custom_minimum_size = Vector2(140, 64)
+	jump_button = _make_jump_button()
+	jump_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	jump_button.offset_left = -112
+	jump_button.offset_top = -112
+	jump_button.offset_right = -16
+	jump_button.offset_bottom = -16
 	jump_button.button_down.connect(func(): jump_held = true)
 	jump_button.button_up.connect(func(): jump_held = false)
-	touch_bar.add_child(jump_button)
+	touch_controls.add_child(jump_button)
 
 	results_panel = _make_results_panel()
 	game_root.add_child(results_panel)
@@ -281,6 +267,36 @@ func _make_results_panel() -> PanelContainer:
 	return panel
 
 
+func _make_jump_button() -> Button:
+	var button := Button.new()
+	button.text = "Jump"
+	button.custom_minimum_size = Vector2(96, 96)
+	button.focus_mode = Control.FOCUS_NONE
+
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.18, 0.55, 0.42, 0.9)
+	normal.border_color = Color(0.45, 0.95, 0.72, 0.65)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(48)
+	normal.content_margin_top = 8
+	normal.content_margin_bottom = 8
+	button.add_theme_stylebox_override("normal", normal)
+
+	var hover := normal.duplicate()
+	hover.bg_color = Color(0.22, 0.62, 0.48, 0.95)
+	button.add_theme_stylebox_override("hover", hover)
+
+	var pressed := normal.duplicate()
+	pressed.bg_color = Color(0.12, 0.42, 0.32, 0.95)
+	button.add_theme_stylebox_override("pressed", pressed)
+
+	return button
+
+
+func _on_joystick_direction(direction: Vector2) -> void:
+	touch_direction = direction.x
+
+
 func _make_touch_button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
@@ -315,9 +331,12 @@ func _show_wallet_gate() -> void:
 
 func _set_playing_ui(active: bool) -> void:
 	playing = active
-	touch_bar.visible = active
+	touch_controls.visible = active
 	hud_bar.visible = active
 	toast_label.visible = active
+	if not active:
+		touch_direction = 0.0
+		jump_held = false
 
 
 func _start_run() -> void:

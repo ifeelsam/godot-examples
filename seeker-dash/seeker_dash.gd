@@ -5,7 +5,7 @@ extends Control
 
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
-const VIRTUAL_JOYSTICK_SCRIPT := preload("res://ui/virtual_joystick.gd")
+const DIRECTION_PAD_SCRIPT := preload("res://ui/direction_pad.gd")
 const JUMP_BUTTON_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/button_circle.svg")
 const JUMP_ICON_TEXTURE := preload("res://ui/mobile-controls/Vector/Icons/icon_jump.svg")
 const PIXEL := preload("res://game/pixel_assets.gd")
@@ -34,7 +34,7 @@ var viewport_container: SubViewportContainer
 var sub_viewport: SubViewport
 var world: Node2D
 var touch_controls: Control
-var virtual_joystick: Control
+var direction_pad: Control
 var jump_button: TextureButton
 var toast_label: Label
 
@@ -157,15 +157,15 @@ func _build_ui() -> void:
 	touch_controls.modulate = Color(1, 1, 1, TOUCH_CONTROL_OPACITY)
 	game_root.add_child(touch_controls)
 
-	virtual_joystick = Control.new()
-	virtual_joystick.set_script(VIRTUAL_JOYSTICK_SCRIPT)
-	virtual_joystick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	virtual_joystick.offset_left = 12
-	virtual_joystick.offset_top = -160
-	virtual_joystick.offset_right = 160
-	virtual_joystick.offset_bottom = -12
-	virtual_joystick.direction_changed.connect(_on_joystick_direction)
-	touch_controls.add_child(virtual_joystick)
+	direction_pad = Control.new()
+	direction_pad.set_script(DIRECTION_PAD_SCRIPT)
+	direction_pad.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	direction_pad.offset_left = 12
+	direction_pad.offset_top = -112
+	direction_pad.offset_right = 216
+	direction_pad.offset_bottom = -12
+	direction_pad.direction_changed.connect(_on_direction_pad_changed)
+	touch_controls.add_child(direction_pad)
 
 	jump_button = _make_jump_button()
 	jump_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -329,8 +329,8 @@ func _make_jump_button() -> TextureButton:
 	return button
 
 
-func _on_joystick_direction(direction: Vector2) -> void:
-	touch_direction = direction.x
+func _on_direction_pad_changed(direction: float) -> void:
+	touch_direction = direction
 
 
 func _make_touch_button(text: String) -> Button:

@@ -60,7 +60,7 @@ func _ready() -> void:
 	player_icon.texture = PIXEL.TEX_PLAYER
 	player_icon.custom_minimum_size = Vector2(36, 36)
 	player_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	player_icon.stretch_mode = TextureRect.STRETCH_STRETCH
+	player_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	player_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hero.add_child(player_icon)
 

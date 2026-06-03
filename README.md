@@ -15,11 +15,11 @@ saved between sessions. When a wallet is connected, each cash-out is signed by t
 wallet as a "proof of bank" receipt.
 
 ### Seeker Dash (`seeker-dash/`)
-A side-scrolling platformer — run, jump, collect coins, stomp enemies, and reach
-the flag at the end of the level. Touch controls (or keyboard) work on desktop and
-mobile. When a wallet is connected, every 5 coins triggers a **checkpoint signature**
-(mid-run MWA demo), and crossing the finish line signs a **level-clear receipt**
-with your time, coin count, stomps, and deaths.
+A side-scrolling platformer in **landscape** — run, jump, collect coins, stomp enemies,
+and reach the flag. A wallet gate dialog appears before your first run; once connected,
+the game starts automatically and signs **checkpoint proofs** every 5 coins plus a
+**level-clear receipt** at the finish. Touch controls (or keyboard) work on desktop;
+export to Android / Seeker for live wallet connect.
 
 ### Click Rush (`click-rush/`)
 A 30-second reaction game. Targets pop up, shrink, and vanish — tap them before

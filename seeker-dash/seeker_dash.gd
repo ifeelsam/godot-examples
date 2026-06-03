@@ -1,37 +1,38 @@
 extends Control
 
 # Seeker Dash — a side-scrolling platformer inspired by classic Mario runners.
-# Run, jump, collect coins, stomp enemies, and reach the flag before time runs out.
-#
-# Connect a Seeker / MWA wallet via Mobile Wallet Kit to:
-#   • Sign checkpoint proofs every 5 coins (mid-run wallet interaction)
-#   • Sign a tamper-evident level-clear receipt at the finish line
-#
-# Fully playable without a wallet; wallet features stay idle until connected
-# (and connecting requires an Android/Seeker build).
+# Landscape layout with a wallet gate dialog; connecting auto-starts the run.
 
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
+const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
 const SAVE_PATH := "user://seeker_dash.save"
 const CHECKPOINT_COINS := 5
 
+const COLOR_BG := Color(0.05, 0.07, 0.12)
+const COLOR_HUD := Color(0.08, 0.1, 0.16, 0.88)
+const COLOR_ACCENT := Color(0.35, 0.78, 0.95)
+const COLOR_GOLD := Color(0.95, 0.82, 0.35)
+
 var wallet_adapter: WalletAdapter
 
-var status_label: Label
-var address_label: Label
-var connect_button: Button
-var disconnect_button: Button
+var wallet_gate: Control
+var game_root: Control
+var hud_bar: PanelContainer
 var hud_label: Label
 var best_label: Label
-var prompt_label: Label
-var start_button: Button
-var log_label: RichTextLabel
+var wallet_chip: Label
+var disconnect_button: Button
+var results_panel: PanelContainer
+var results_label: Label
+var play_again_button: Button
 var viewport_container: SubViewportContainer
 var sub_viewport: SubViewport
 var world: Node2D
-
+var touch_bar: HBoxContainer
 var left_button: Button
 var right_button: Button
 var jump_button: Button
+var toast_label: Label
 
 var playing := false
 var awaiting_sign := false
@@ -41,6 +42,7 @@ var jump_held := false
 var last_checkpoint := 0
 var best_time := 9999.0
 var best_coins := 0
+var pending_auto_start := false
 
 
 func _ready() -> void:
@@ -49,9 +51,8 @@ func _ready() -> void:
 	_build_ui()
 	_setup_world()
 	_setup_wallet()
-	_refresh_wallet_ui()
 	_refresh_hud()
-	_append_log("Reach the flag at the end of the level. Stomp red enemies from above!")
+	_show_wallet_gate()
 
 
 func _process(_delta: float) -> void:
@@ -101,142 +102,251 @@ func _setup_wallet() -> void:
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color(0.06, 0.08, 0.14)
+	bg.color = COLOR_BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "top", "right", "bottom"]:
-		margin.add_theme_constant_override("margin_%s" % side, 16)
-	add_child(margin)
-
-	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 8)
-	margin.add_child(stack)
-
-	var title := Label.new()
-	title.text = "Seeker Dash"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 36)
-	stack.add_child(title)
-
-	var subtitle := Label.new()
-	subtitle.text = "Run • Jump • Collect • Sign"
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_color_override("font_color", Color(0.65, 0.75, 0.9))
-	stack.add_child(subtitle)
-
-	status_label = Label.new()
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stack.add_child(status_label)
-
-	address_label = Label.new()
-	address_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	address_label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-	address_label.add_theme_font_size_override("font_size", 12)
-	stack.add_child(address_label)
-
-	var wallet_row := HBoxContainer.new()
-	wallet_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	wallet_row.add_theme_constant_override("separation", 8)
-	stack.add_child(wallet_row)
-
-	connect_button = Button.new()
-	connect_button.text = "Connect Wallet"
-	connect_button.pressed.connect(_on_connect_pressed)
-	wallet_row.add_child(connect_button)
-
-	disconnect_button = Button.new()
-	disconnect_button.text = "Disconnect"
-	disconnect_button.pressed.connect(_on_disconnect_pressed)
-	wallet_row.add_child(disconnect_button)
-
-	hud_label = Label.new()
-	hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hud_label.add_theme_font_size_override("font_size", 18)
-	stack.add_child(hud_label)
-
-	best_label = Label.new()
-	best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	best_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.55))
-	stack.add_child(best_label)
-
-	prompt_label = Label.new()
-	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stack.add_child(prompt_label)
-
-	start_button = Button.new()
-	start_button.text = "Start Run"
-	start_button.custom_minimum_size = Vector2(0, 48)
-	start_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	start_button.pressed.connect(_on_start_pressed)
-	stack.add_child(start_button)
+	game_root = Control.new()
+	game_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(game_root)
 
 	viewport_container = SubViewportContainer.new()
-	viewport_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	viewport_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	viewport_container.custom_minimum_size = Vector2(0, 280)
+	viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
 	viewport_container.stretch = true
-	stack.add_child(viewport_container)
+	game_root.add_child(viewport_container)
 
 	sub_viewport = SubViewport.new()
-	sub_viewport.size = Vector2(720, 400)
+	sub_viewport.size = Vector2(960, 540)
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub_viewport.handle_input_locally = false
 	viewport_container.add_child(sub_viewport)
 
-	var touch_row := HBoxContainer.new()
-	touch_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	touch_row.add_theme_constant_override("separation", 10)
-	stack.add_child(touch_row)
+	hud_bar = _make_hud_bar()
+	game_root.add_child(hud_bar)
+
+	var stats_box: VBoxContainer = hud_bar.get_meta("stats_box")
+	hud_label = Label.new()
+	hud_label.add_theme_font_size_override("font_size", 17)
+	stats_box.add_child(hud_label)
+
+	best_label = Label.new()
+	best_label.add_theme_font_size_override("font_size", 14)
+	best_label.add_theme_color_override("font_color", COLOR_GOLD)
+	stats_box.add_child(best_label)
+
+	var wallet_box: HBoxContainer = hud_bar.get_meta("wallet_box")
+
+	wallet_chip = Label.new()
+	wallet_chip.add_theme_font_size_override("font_size", 13)
+	wallet_chip.add_theme_color_override("font_color", COLOR_ACCENT)
+	wallet_box.add_child(wallet_chip)
+
+	disconnect_button = Button.new()
+	disconnect_button.text = "Disconnect"
+	disconnect_button.focus_mode = Control.FOCUS_NONE
+	disconnect_button.pressed.connect(_on_disconnect_pressed)
+	wallet_box.add_child(disconnect_button)
+
+	touch_bar = HBoxContainer.new()
+	touch_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	touch_bar.offset_top = -88
+	touch_bar.add_theme_constant_override("separation", 12)
+	touch_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	game_root.add_child(touch_bar)
 
 	left_button = _make_touch_button("◀")
 	left_button.button_down.connect(func(): move_left = true)
 	left_button.button_up.connect(func(): move_left = false)
-	touch_row.add_child(left_button)
+	touch_bar.add_child(left_button)
 
 	right_button = _make_touch_button("▶")
 	right_button.button_down.connect(func(): move_right = true)
 	right_button.button_up.connect(func(): move_right = false)
-	touch_row.add_child(right_button)
+	touch_bar.add_child(right_button)
 
 	jump_button = _make_touch_button("Jump")
-	jump_button.modulate = Color(0.55, 0.9, 0.75)
+	jump_button.modulate = Color(0.55, 0.95, 0.78)
+	jump_button.custom_minimum_size = Vector2(140, 64)
 	jump_button.button_down.connect(func(): jump_held = true)
 	jump_button.button_up.connect(func(): jump_held = false)
-	touch_row.add_child(jump_button)
+	touch_bar.add_child(jump_button)
 
-	log_label = RichTextLabel.new()
-	log_label.fit_content = true
-	log_label.scroll_active = true
-	log_label.custom_minimum_size = Vector2(0, 72)
-	stack.add_child(log_label)
+	results_panel = _make_results_panel()
+	game_root.add_child(results_panel)
+
+	var results_stack: VBoxContainer = results_panel.get_meta("stack")
+	results_label = Label.new()
+	results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	results_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	results_stack.add_child(results_label)
+
+	play_again_button = _make_touch_button("Play Again")
+	play_again_button.custom_minimum_size = Vector2(180, 48)
+	play_again_button.pressed.connect(_on_play_again_pressed)
+	results_stack.add_child(play_again_button)
+
+	toast_label = Label.new()
+	toast_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	toast_label.offset_top = -120
+	toast_label.offset_bottom = -92
+	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast_label.add_theme_font_size_override("font_size", 13)
+	toast_label.add_theme_color_override("font_color", Color(0.82, 0.9, 1.0))
+	game_root.add_child(toast_label)
+
+	wallet_gate = Control.new()
+	wallet_gate.set_script(WALLET_GATE_SCRIPT)
+	wallet_gate.set_anchors_preset(Control.PRESET_FULL_RECT)
+	wallet_gate.connect_pressed.connect(_on_gate_connect_pressed)
+	wallet_gate.skip_pressed.connect(_on_gate_skip_pressed)
+	add_child(wallet_gate)
+
+	_set_playing_ui(false)
+
+
+func _make_hud_bar() -> PanelContainer:
+	var bar := PanelContainer.new()
+	bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	bar.offset_bottom = 72
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = COLOR_HUD
+	style.set_corner_radius_all(0)
+	style.border_color = Color(0.25, 0.35, 0.55, 0.35)
+	style.set_border_width_all(1)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	bar.add_theme_stylebox_override("panel", style)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 24)
+	bar.add_child(row)
+
+	var stats := VBoxContainer.new()
+	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats.add_theme_constant_override("separation", 2)
+	row.add_child(stats)
+
+	var wallet_box := HBoxContainer.new()
+	wallet_box.add_theme_constant_override("separation", 8)
+	row.add_child(wallet_box)
+
+	bar.set_meta("stats_box", stats)
+	bar.set_meta("wallet_box", wallet_box)
+
+	return bar
+
+
+func _make_results_panel() -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.visible = false
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(420, 0)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.13, 0.22, 0.94)
+	style.border_color = COLOR_GOLD
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(18)
+	style.content_margin_left = 24
+	style.content_margin_right = 24
+	style.content_margin_top = 24
+	style.content_margin_bottom = 24
+	panel.add_theme_stylebox_override("panel", style)
+
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 12)
+	panel.add_child(stack)
+
+	var title := Label.new()
+	title.text = "Level Complete"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 28)
+	stack.add_child(title)
+
+	panel.set_meta("stack", stack)
+
+	return panel
 
 
 func _make_touch_button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.custom_minimum_size = Vector2(96, 56)
+	button.custom_minimum_size = Vector2(96, 64)
 	button.focus_mode = Control.FOCUS_NONE
+
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.16, 0.2, 0.3, 0.92)
+	normal.set_corner_radius_all(14)
+	normal.content_margin_top = 8
+	normal.content_margin_bottom = 8
+	button.add_theme_stylebox_override("normal", normal)
+
+	var hover := normal.duplicate()
+	hover.bg_color = Color(0.22, 0.28, 0.4, 0.95)
+	button.add_theme_stylebox_override("hover", hover)
+
+	var pressed := normal.duplicate()
+	pressed.bg_color = Color(0.12, 0.16, 0.24, 0.95)
+	button.add_theme_stylebox_override("pressed", pressed)
+
 	return button
 
 
-func _on_start_pressed() -> void:
+func _show_wallet_gate() -> void:
+	pending_auto_start = false
+	results_panel.visible = false
+	_set_playing_ui(false)
+	wallet_gate.set_bridge_available(wallet_adapter.is_available())
+	wallet_gate.show_gate()
+
+
+func _set_playing_ui(active: bool) -> void:
+	playing = active
+	touch_bar.visible = active
+	hud_bar.visible = active
+	toast_label.visible = active
+
+
+func _start_run() -> void:
 	if playing or awaiting_sign:
 		return
-	playing = true
 	last_checkpoint = 0
-	start_button.disabled = true
-	prompt_label.text = "Go! Collect coins and reach the flag."
+	results_panel.visible = false
+	wallet_gate.hide_gate()
+	_set_playing_ui(true)
 	world.start_run()
-	_append_log("Run started — good luck!")
+	_toast("Run started — reach the flag!")
+
+
+func _on_gate_connect_pressed() -> void:
+	if not wallet_adapter.is_available():
+		wallet_gate.set_state(wallet_gate.State.ERROR, "Wallet bridge unavailable on desktop.")
+		return
+	pending_auto_start = true
+	wallet_gate.set_state(wallet_gate.State.CONNECTING)
+	wallet_adapter.connect_wallet()
+
+
+func _on_gate_skip_pressed() -> void:
+	pending_auto_start = false
+	wallet_gate.hide_gate()
+	_start_run()
+
+
+func _on_play_again_pressed() -> void:
+	if wallet_adapter.is_wallet_connected():
+		_start_run()
+	else:
+		_show_wallet_gate()
 
 
 func _on_coin_collected(total: int) -> void:
 	if total > 0 and total % CHECKPOINT_COINS == 0 and total != last_checkpoint:
 		last_checkpoint = total
-		_append_log("Checkpoint: %d coins collected." % total)
+		_toast("Checkpoint: %d coins" % total)
 		_sign_checkpoint(total)
 
 
@@ -245,12 +355,11 @@ func _on_enemy_stomped(_total: int) -> void:
 
 
 func _on_player_died(deaths: int) -> void:
-	_append_log("Ouch! Deaths: %d" % deaths)
+	_toast("Ouch! Deaths: %d" % deaths)
 
 
 func _on_level_finished(stats: Dictionary) -> void:
-	playing = false
-	start_button.disabled = false
+	_set_playing_ui(false)
 
 	var time: float = stats.get("time", 0.0)
 	var coin_count: int = stats.get("coins", 0)
@@ -267,12 +376,10 @@ func _on_level_finished(stats: Dictionary) -> void:
 	if improved:
 		_save_best()
 
-	_append_log(
-		"Level clear! Time %0.1fs • %d coins • %d stomps • %d deaths" % [
-			time, coin_count, stomp_count, death_count
-		]
-	)
-	prompt_label.text = "Level complete! Tap Start Run to play again."
+	results_label.text = "Time %0.1fs\n%d coins  •  %d stomps  •  %d deaths" % [
+		time, coin_count, stomp_count, death_count
+	]
+	results_panel.visible = true
 	_sign_level_clear(stats)
 	_refresh_hud()
 
@@ -281,7 +388,7 @@ func _sign_checkpoint(coin_total: int) -> void:
 	if not wallet_adapter.is_wallet_connected():
 		return
 	awaiting_sign = true
-	status_label.text = "Signing checkpoint..."
+	_toast("Signing checkpoint...")
 	wallet_adapter.sign_message(
 		"Seeker Dash checkpoint coins %d deaths %d at %d" % [
 			coin_total,
@@ -293,10 +400,10 @@ func _sign_checkpoint(coin_total: int) -> void:
 
 func _sign_level_clear(stats: Dictionary) -> void:
 	if not wallet_adapter.is_wallet_connected():
-		_append_log("Connect a wallet to sign your level-clear proof.")
+		_toast("Connect a wallet to sign your level-clear proof.")
 		return
 	awaiting_sign = true
-	status_label.text = "Signing level clear..."
+	_toast("Signing level clear...")
 	wallet_adapter.sign_message(
 		"Seeker Dash clear time %0.2f coins %d stomps %d deaths %d at %d" % [
 			stats.get("time", 0.0),
@@ -308,74 +415,74 @@ func _sign_level_clear(stats: Dictionary) -> void:
 	)
 
 
-func _on_connect_pressed() -> void:
-	if not wallet_adapter.is_available():
-		_append_log("Wallet bridge unavailable. Export to Android/Seeker to connect.")
-		return
-	status_label.text = "Connecting..."
-	wallet_adapter.connect_wallet()
-
-
 func _on_disconnect_pressed() -> void:
 	wallet_adapter.disconnect_wallet()
 
 
 func _on_connected(address: String) -> void:
-	_append_log("Connected: %s" % address)
+	wallet_gate.set_state(wallet_gate.State.CONNECTED, _short_address(address))
 	_refresh_wallet_ui()
+	if pending_auto_start:
+		await get_tree().create_timer(0.45).timeout
+		pending_auto_start = false
+		_start_run()
 
 
 func _on_connection_failed(error: String) -> void:
-	_append_log("Wallet error: %s" % error)
+	pending_auto_start = false
+	wallet_gate.set_state(wallet_gate.State.ERROR, error)
 	_refresh_wallet_ui()
 
 
 func _on_message_signed(signature: PackedByteArray) -> void:
 	awaiting_sign = false
-	_append_log("Signed: %s..." % signature.hex_encode().substr(0, 24))
+	_toast("Signed %s..." % signature.hex_encode().substr(0, 16))
 	_refresh_wallet_ui()
 
 
 func _on_sign_failed(error: String) -> void:
 	awaiting_sign = false
-	_append_log("Could not sign: %s" % error)
+	_toast("Sign failed: %s" % error)
 	_refresh_wallet_ui()
 
 
 func _on_disconnected() -> void:
-	_append_log("Wallet disconnected.")
+	pending_auto_start = false
 	_refresh_wallet_ui()
+	if not playing:
+		wallet_gate.show_gate()
+		wallet_gate.set_state(wallet_gate.State.IDLE)
 
 
 func _refresh_wallet_ui() -> void:
 	var connected := wallet_adapter != null and wallet_adapter.is_wallet_connected()
-	connect_button.visible = not connected
 	disconnect_button.visible = connected
-
 	if connected:
-		status_label.text = "Wallet connected"
-		address_label.text = wallet_adapter.get_connected_address()
-	elif awaiting_sign:
-		pass
+		wallet_chip.text = _short_address(wallet_adapter.get_connected_address())
 	else:
-		status_label.text = "No wallet connected"
-		address_label.text = ""
+		wallet_chip.text = "No wallet"
 
 
 func _refresh_hud() -> void:
 	if world == null:
 		return
 	var hud: Dictionary = world.get_hud()
-	hud_label.text = "Coins %d  •  Stomps %d  •  Deaths %d  •  Time %0.1fs" % [
+	hud_label.text = "Coins %d   Stomps %d   Deaths %d   Time %0.1fs" % [
 		hud.get("coins", 0),
 		hud.get("stomps", 0),
 		hud.get("deaths", 0),
 		hud.get("time", 0.0),
 	]
 	if best_time < 9999.0:
-		best_label.text = "Best time %0.1fs  •  Best coins %d" % [best_time, best_coins]
+		best_label.text = "Best %0.1fs  •  %d coins" % [best_time, best_coins]
 	else:
-		best_label.text = "Finish the level to set a best time."
+		best_label.text = "Set a best time by finishing the level"
+
+
+func _short_address(address: String) -> String:
+	if address.length() <= 12:
+		return address
+	return address.substr(0, 4) + "…" + address.substr(address.length() - 4)
 
 
 func _load_best() -> void:
@@ -398,5 +505,5 @@ func _save_best() -> void:
 	f.close()
 
 
-func _append_log(message: String) -> void:
-	log_label.append_text("%s\n" % message)
+func _toast(message: String) -> void:
+	toast_label.text = message

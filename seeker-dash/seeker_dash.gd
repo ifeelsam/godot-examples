@@ -6,6 +6,8 @@ extends Control
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
 const VIRTUAL_JOYSTICK_SCRIPT := preload("res://ui/virtual_joystick.gd")
+const JUMP_BUTTON_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/button_circle.svg")
+const JUMP_ICON_TEXTURE := preload("res://ui/mobile-controls/Vector/Icons/icon_jump.svg")
 const SAVE_PATH := "user://seeker_dash.save"
 const CHECKPOINT_COINS := 5
 
@@ -31,7 +33,7 @@ var sub_viewport: SubViewport
 var world: Node2D
 var touch_controls: Control
 var virtual_joystick: Control
-var jump_button: Button
+var jump_button: TextureButton
 var toast_label: Label
 
 var playing := false
@@ -150,10 +152,10 @@ func _build_ui() -> void:
 	virtual_joystick = Control.new()
 	virtual_joystick.set_script(VIRTUAL_JOYSTICK_SCRIPT)
 	virtual_joystick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	virtual_joystick.offset_left = 16
-	virtual_joystick.offset_top = -184
-	virtual_joystick.offset_right = 184
-	virtual_joystick.offset_bottom = -16
+	virtual_joystick.offset_left = 12
+	virtual_joystick.offset_top = -160
+	virtual_joystick.offset_right = 160
+	virtual_joystick.offset_bottom = -12
 	virtual_joystick.direction_changed.connect(_on_joystick_direction)
 	touch_controls.add_child(virtual_joystick)
 
@@ -163,8 +165,14 @@ func _build_ui() -> void:
 	jump_button.offset_top = -112
 	jump_button.offset_right = -16
 	jump_button.offset_bottom = -16
-	jump_button.button_down.connect(func(): jump_held = true)
-	jump_button.button_up.connect(func(): jump_held = false)
+	jump_button.button_down.connect(func():
+		jump_held = true
+		jump_button.modulate = Color(0.82, 0.82, 0.82, 1.0)
+	)
+	jump_button.button_up.connect(func():
+		jump_held = false
+		jump_button.modulate = Color(1, 1, 1, 1)
+	)
 	touch_controls.add_child(jump_button)
 
 	results_panel = _make_results_panel()
@@ -267,28 +275,27 @@ func _make_results_panel() -> PanelContainer:
 	return panel
 
 
-func _make_jump_button() -> Button:
-	var button := Button.new()
-	button.text = "Jump"
+func _make_jump_button() -> TextureButton:
+	var button := TextureButton.new()
 	button.custom_minimum_size = Vector2(96, 96)
+	button.texture_normal = JUMP_BUTTON_TEXTURE
+	button.texture_pressed = JUMP_BUTTON_TEXTURE
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	button.focus_mode = Control.FOCUS_NONE
 
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.18, 0.55, 0.42, 0.9)
-	normal.border_color = Color(0.45, 0.95, 0.72, 0.65)
-	normal.set_border_width_all(2)
-	normal.set_corner_radius_all(48)
-	normal.content_margin_top = 8
-	normal.content_margin_bottom = 8
-	button.add_theme_stylebox_override("normal", normal)
-
-	var hover := normal.duplicate()
-	hover.bg_color = Color(0.22, 0.62, 0.48, 0.95)
-	button.add_theme_stylebox_override("hover", hover)
-
-	var pressed := normal.duplicate()
-	pressed.bg_color = Color(0.12, 0.42, 0.32, 0.95)
-	button.add_theme_stylebox_override("pressed", pressed)
+	var icon := TextureRect.new()
+	icon.texture = JUMP_ICON_TEXTURE
+	icon.custom_minimum_size = Vector2(42, 42)
+	icon.size = Vector2(42, 42)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.set_anchors_preset(Control.PRESET_CENTER)
+	icon.offset_left = -21
+	icon.offset_top = -21
+	icon.offset_right = 21
+	icon.offset_bottom = 21
+	button.add_child(icon)
 
 	return button
 

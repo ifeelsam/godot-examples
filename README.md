@@ -8,12 +8,19 @@ Each game is a standalone Godot project and vendors the `MobileWalletKit` addon.
 ## Games
 
 ### Coin Flip (`coin-flip/`)
-Flip a coin, build a win/loss streak. When a wallet is connected, every win is
-signed by the wallet as a lightweight "proof of win".
+A press-your-luck prediction game. Set a stake, then **call** heads or tails.
+Every correct call doubles your pot (double-or-nothing); one wrong call wipes it.
+Cash out to bank the pot before your luck runs out. Best streak and best bank are
+saved between sessions. When a wallet is connected, each cash-out is signed by the
+wallet as a "proof of bank" receipt.
 
 ### Click Rush (`click-rush/`)
-Tap the moving target as many times as you can in 15 seconds. When the round
-ends, your final score is signed by the connected wallet as a high-score receipt.
+A 30-second reaction game. Targets pop up, shrink, and vanish — tap them before
+they disappear to build a combo multiplier (up to x8). Dodge the red bombs and
+don't miss empty space or you'll lose one of your three lives. The longer you
+survive, the faster and smaller the targets get. Your best score is saved, and
+when the round ends your final score is signed by the connected wallet as a
+high-score receipt.
 
 ## Running
 
@@ -38,7 +45,7 @@ Both games create a `WalletAdapter`, connect its signals, and call:
 
 - `connect_wallet()` — open the wallet chooser and authorize
 - `is_wallet_connected()` / `get_connected_address()` — read session state
-- `sign_message(text)` — sign the win / score proof
+- `sign_message(text)` — sign the cash-out / score proof
 - `disconnect_wallet()` — end the session
 
 See `coin_flip.gd` and `click_rush.gd` for the full, commented flow.

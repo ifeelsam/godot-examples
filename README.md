@@ -82,7 +82,7 @@ Both games create a `WalletAdapter`, connect its signals, and call:
 
 - `connect_wallet()` — open the wallet chooser and authorize
 - `is_wallet_connected()` / `get_connected_address()` — read session state
-- `sign_message(text)` — sign the cash-out / score proof
+- `sign_message(text)` — sign checkpoint proofs and level-clear receipts
 - `disconnect_wallet()` — end the session
 
 See `coin_flip.gd` and `click_rush.gd` for the full, commented flow.

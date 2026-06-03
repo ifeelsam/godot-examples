@@ -288,6 +288,9 @@ func _spawn_flag() -> void:
 	var flag := Area2D.new()
 	flag.position = Vector2(3480, 420)
 	flag.set_script(FLAG_SCENE)
+	flag.collision_layer = 0
+	flag.collision_mask = 2
+	flag.monitoring = true
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()

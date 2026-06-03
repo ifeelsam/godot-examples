@@ -220,10 +220,13 @@ func _spawn_coins() -> void:
 		coin.position = point
 		coin.set_script(COIN_SCENE)
 		coin.add_to_group("coin")
+		coin.collision_layer = 0
+		coin.collision_mask = 2
+		coin.monitoring = true
 
 		var shape := CollisionShape2D.new()
 		var circle := CircleShape2D.new()
-		circle.radius = 12.0
+		circle.radius = 16.0
 		shape.shape = circle
 		coin.add_child(shape)
 

@@ -1,8 +1,9 @@
 # Godot 4
 .godot/
-.import/
-*.uid
-*.import
+.import/                  # Godot 3 import cache
+# Godot 4 editor sidecars — regenerated when the project is opened
+**/*.uid
+**/*.import
 export_presets.cfg
 
 # Godot Android build template (generated, ~1GB) and export outputs
@@ -29,3 +30,4 @@ android/
 .DS_Store
 *.tmp
 graphify-out/
+

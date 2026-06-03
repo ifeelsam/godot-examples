@@ -31,7 +31,7 @@ high-score receipt.
 
 ## Running
 
-1. Open either `coin-flip/` or `click-rush/` as a project in Godot 4.3+.
+1. Open `seeker-dash/`, `coin-flip/`, or `click-rush/` as a project in Godot 4.3+.
 2. The `MobileWalletKit` addon is already enabled.
 3. Press play. Both games are fully playable on desktop — the wallet features
    stay idle until a wallet is connected.

@@ -57,6 +57,9 @@ seeker-dash/ui/pixel-platformer/SampleA.png
 seeker-dash/ui/pixel-platformer/SampleB.png
 seeker-dash/ui/pixel-platformer/Sprites/
 seeker-dash/ui/pixel-platformer/Tilemap/
+seeker-dash/ui/pixel-platformer/Construct 3/
+seeker-dash/ui/pixel-platformer/Tiled/
+seeker-dash/ui/pixel-platformer/Tilesheet*.txt
 seeker-dash/ui/pixel-platformer/Tiles/tile_*.png
 !seeker-dash/ui/pixel-platformer/Tiles/tile_0047.png
 !seeker-dash/ui/pixel-platformer/Tiles/tile_0058.png

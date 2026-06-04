@@ -33,7 +33,7 @@ func _physics_process(delta: float) -> void:
 	elif global_position.x >= patrol_right:
 		direction = -1.0
 
-	sprite.scale.x = direction
+	sprite.flip_h = direction < 0.0
 
 
 func defeat() -> void:
@@ -45,4 +45,3 @@ func defeat() -> void:
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(queue_free)
-

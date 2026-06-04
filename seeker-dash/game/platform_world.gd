@@ -258,9 +258,9 @@ func _spawn_enemies() -> void:
 		var texture := PixelAssets.TEX_ENEMY_SLIME
 		if data.get("kind", "slime") == "robot":
 			texture = PixelAssets.TEX_ENEMY_ROBOT
-		var sprite := PixelAssets.make_sprite(texture)
+		var sprite := PixelAssets.make_character_sprite(texture)
 		sprite.name = "Sprite"
-		sprite.position = Vector2(0, -18)
+		sprite.position = Vector2(0, -PixelAssets.TILE_WORLD * 0.5)
 		enemy.add_child(sprite)
 
 		enemy.setup(data["left"], data["right"], randf() > 0.5)
@@ -306,9 +306,9 @@ func _spawn_player() -> void:
 	shape.position = Vector2(0, -15)
 	player.add_child(shape)
 
-	var sprite := PixelAssets.make_sprite(PixelAssets.TEX_PLAYER)
+	var sprite := PixelAssets.make_character_sprite(PixelAssets.TEX_PLAYER)
 	sprite.name = "Sprite"
-	sprite.position = Vector2(0, -18)
+	sprite.position = Vector2(0, -PixelAssets.TILE_WORLD * 0.5)
 	player.add_child(sprite)
 
 	var stomp := Area2D.new()
@@ -384,6 +384,7 @@ func _reset_player() -> void:
 	player.global_position = respawn_point
 	player.velocity = Vector2.ZERO
 	player.sprite.modulate = Color.WHITE
+	player.sprite.flip_h = false
 
 
 func _on_flag_reached() -> void:

@@ -57,9 +57,9 @@ func set_input(direction: float, wants_jump: bool) -> void:
 	jump_pressed = wants_jump
 
 	if direction < 0.0:
-		sprite.scale.x = -1.0
+		sprite.flip_h = true
 	elif direction > 0.0:
-		sprite.scale.x = 1.0
+		sprite.flip_h = false
 
 
 func _on_stomp_body_entered(body: Node) -> void:

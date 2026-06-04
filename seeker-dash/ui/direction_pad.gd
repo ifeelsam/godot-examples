@@ -4,7 +4,6 @@ signal direction_changed(direction: float)
 
 const LEFT_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/direction_left.svg")
 const RIGHT_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/direction_right.svg")
-const TOUCH_BUTTON_SCRIPT := preload("res://ui/touch_texture_button.gd")
 
 @export var button_size := 96.0
 
@@ -18,6 +17,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 12)
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(row)
@@ -54,9 +54,8 @@ func _update_direction() -> void:
 	emit_signal("direction_changed", _direction)
 
 
-func _make_button(texture: Texture2D) -> Control:
-	var button := Control.new()
-	button.set_script(TOUCH_BUTTON_SCRIPT)
+func _make_button(texture: Texture2D) -> TouchTextureButton:
+	var button := TouchTextureButton.new()
 	button.normal_texture = texture
 	button.button_size = button_size
 	return button

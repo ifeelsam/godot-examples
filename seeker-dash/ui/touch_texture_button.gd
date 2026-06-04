@@ -1,3 +1,4 @@
+class_name TouchTextureButton
 extends Control
 
 signal pressed_changed(pressed: bool)
@@ -26,7 +27,10 @@ func _ready() -> void:
 	move_child(icon, 0)
 
 
-func _gui_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+
 	if event is InputEventScreenTouch:
 		_handle_touch(event.index, event.position, event.pressed)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -35,19 +39,15 @@ func _gui_input(event: InputEvent) -> void:
 
 func _handle_touch(pointer_id: int, global_pos: Vector2, is_pressed: bool) -> void:
 	if is_pressed:
-		if not _contains_global_point(global_pos):
+		if not get_global_rect().has_point(global_pos):
 			return
 		_active_pointers[pointer_id] = true
 		_set_pressed(true)
-		accept_event()
+		get_viewport().set_input_as_handled()
 	elif _active_pointers.has(pointer_id):
 		_active_pointers.erase(pointer_id)
 		_set_pressed(not _active_pointers.is_empty())
-		accept_event()
-
-
-func _contains_global_point(global_pos: Vector2) -> bool:
-	return get_global_rect().has_point(global_pos)
+		get_viewport().set_input_as_handled()
 
 
 func _set_pressed(value: bool) -> void:

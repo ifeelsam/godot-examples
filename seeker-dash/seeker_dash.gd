@@ -6,7 +6,6 @@ extends Control
 const WORLD_SCRIPT := preload("res://game/platform_world.gd")
 const WALLET_GATE_SCRIPT := preload("res://ui/wallet_gate.gd")
 const DIRECTION_PAD_SCRIPT := preload("res://ui/direction_pad.gd")
-const TOUCH_BUTTON_SCRIPT := preload("res://ui/touch_texture_button.gd")
 const JUMP_BUTTON_TEXTURE := preload("res://ui/mobile-controls/Vector/Style A/button_circle.svg")
 const JUMP_ICON_TEXTURE := preload("res://ui/mobile-controls/Vector/Icons/icon_jump.svg")
 const PIXEL := preload("res://game/pixel_assets.gd")
@@ -36,7 +35,7 @@ var sub_viewport: SubViewport
 var world: Node2D
 var touch_controls: Control
 var direction_pad: Control
-var jump_button: Control
+var jump_button: TouchTextureButton
 var toast_label: Label
 
 var playing := false
@@ -113,6 +112,7 @@ func _build_ui() -> void:
 	viewport_container = SubViewportContainer.new()
 	viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
 	viewport_container.stretch = true
+	viewport_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	viewport_container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	game_root.add_child(viewport_container)
 
@@ -151,6 +151,7 @@ func _build_ui() -> void:
 	touch_controls = Control.new()
 	touch_controls.set_anchors_preset(Control.PRESET_FULL_RECT)
 	touch_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	touch_controls.z_index = 10
 	touch_controls.modulate = Color(1, 1, 1, TOUCH_CONTROL_OPACITY)
 	game_root.add_child(touch_controls)
 
@@ -191,6 +192,7 @@ func _build_ui() -> void:
 	toast_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	toast_label.offset_top = -120
 	toast_label.offset_bottom = -92
+	toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast_label.add_theme_font_size_override("font_size", 13)
 	toast_label.add_theme_color_override("font_color", Color(0.82, 0.9, 1.0))
@@ -294,9 +296,8 @@ func _make_results_panel() -> PanelContainer:
 	return panel
 
 
-func _make_jump_button() -> Control:
-	var button := Control.new()
-	button.set_script(TOUCH_BUTTON_SCRIPT)
+func _make_jump_button() -> TouchTextureButton:
+	var button := TouchTextureButton.new()
 	button.normal_texture = JUMP_BUTTON_TEXTURE
 	button.button_size = 96.0
 

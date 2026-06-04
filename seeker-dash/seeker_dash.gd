@@ -403,7 +403,6 @@ func _on_coin_collected(total: int) -> void:
 	if total > 0 and total % CHECKPOINT_COINS == 0 and total != last_checkpoint:
 		last_checkpoint = total
 		_toast("Checkpoint: %d coins" % total)
-		_sign_checkpoint(total)
 
 
 func _on_enemy_stomped(_total: int) -> void:
@@ -440,20 +439,6 @@ func _on_level_finished(stats: Dictionary) -> void:
 	_refresh_hud()
 
 
-func _sign_checkpoint(coin_total: int) -> void:
-	if not wallet_adapter.is_wallet_connected():
-		return
-	awaiting_sign = true
-	_toast("Signing checkpoint...")
-	wallet_adapter.sign_message(
-		"Seeker Dash checkpoint coins %d deaths %d at %d" % [
-			coin_total,
-			world.get_hud().get("deaths", 0),
-			int(Time.get_unix_time_from_system()),
-		]
-	)
-
-
 func _sign_level_clear(stats: Dictionary) -> void:
 	if not wallet_adapter.is_wallet_connected():
 		_toast("Connect a wallet to sign your level-clear proof.")
@@ -476,7 +461,10 @@ func _on_disconnect_pressed() -> void:
 
 
 func _on_connected(address: String) -> void:
-	wallet_gate.set_state(wallet_gate.State.CONNECTED, _short_address(address))
+	if playing:
+		wallet_gate.hide_gate()
+	else:
+		wallet_gate.set_state(wallet_gate.State.CONNECTED, _short_address(address))
 	_refresh_wallet_ui()
 	if pending_auto_start:
 		await get_tree().create_timer(0.45).timeout
@@ -505,9 +493,10 @@ func _on_sign_failed(error: String) -> void:
 func _on_disconnected() -> void:
 	pending_auto_start = false
 	_refresh_wallet_ui()
-	if not playing:
-		wallet_gate.show_gate()
-		wallet_gate.set_state(wallet_gate.State.IDLE)
+	if playing:
+		return
+	wallet_gate.show_gate()
+	wallet_gate.set_state(wallet_gate.State.IDLE)
 
 
 func _refresh_wallet_ui() -> void:

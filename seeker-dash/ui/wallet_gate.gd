@@ -51,13 +51,16 @@ func _ready() -> void:
 	stack.add_theme_constant_override("separation", 14)
 	_panel.add_child(stack)
 
-	var logo := TextureRect.new()
-	logo.texture = PIXEL.TEX_LOGO
-	logo.custom_minimum_size = Vector2(0, 168)
-	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	stack.add_child(logo)
+	_title_label = Label.new()
+	_title_label.text = "SEEKER DASH"
+	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title_label.custom_minimum_size = Vector2(0, 96)
+	_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_title_label.add_theme_font_size_override("font_size", 52)
+	_title_label.add_theme_color_override("font_color", Color(0.98, 0.86, 0.36))
+	_title_label.add_theme_color_override("font_outline_color", Color(0.12, 0.06, 0.22))
+	_title_label.add_theme_constant_override("outline_size", 8)
+	stack.add_child(_title_label)
 
 	var hero := HBoxContainer.new()
 	hero.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -72,23 +75,12 @@ func _ready() -> void:
 	player_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hero.add_child(player_icon)
 
-	var title_col := VBoxContainer.new()
-	title_col.add_theme_constant_override("separation", 2)
-	hero.add_child(title_col)
-
 	var badge := Label.new()
 	badge.text = "SOLANA MOBILE"
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.add_theme_font_size_override("font_size", 13)
 	badge.add_theme_color_override("font_color", Color(0.55, 0.9, 0.45))
-	title_col.add_child(badge)
-
-	_title_label = Label.new()
-	_title_label.text = "SEEKER DASH"
-	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_title_label.add_theme_font_size_override("font_size", 26)
-	_title_label.add_theme_color_override("font_color", Color(0.98, 0.86, 0.36))
-	title_col.add_child(_title_label)
+	hero.add_child(badge)
 
 	_body_label = Label.new()
 	_body_label.text = "Connect your wallet to sign checkpoint proofs and a level-clear receipt as you play."

@@ -10,30 +10,33 @@ const ENEMY_SCENE := preload("res://game/enemy.gd")
 const COIN_SCENE := preload("res://game/coin.gd")
 const FLAG_SCENE := preload("res://game/flag.gd")
 
+const LEVEL_WIDTH := 3600.0
+const GROUND_Y := 520.0
+
 # Each platform: [x, y, width, height, style]
-# style: "ground" | "brick"
+# style: "ground" | "wood" | "cloud"
 const PLATFORMS: Array = [
-	[0, 520, 520, 80, "ground"],
-	[620, 520, 280, 80, "ground"],
-	[980, 520, 360, 80, "ground"],
-	[1420, 520, 320, 80, "ground"],
-	[1820, 520, 420, 80, "ground"],
-	[2320, 520, 520, 80, "ground"],
-	[2880, 520, 640, 80, "ground"],
-	[180, 420, 160, 24, "brick"],
-	[420, 360, 120, 24, "brick"],
-	[760, 400, 140, 24, "brick"],
-	[1080, 340, 120, 24, "brick"],
-	[1280, 280, 160, 24, "brick"],
-	[1560, 380, 120, 24, "brick"],
-	[1740, 300, 140, 24, "brick"],
-	[2060, 360, 160, 24, "brick"],
-	[2280, 280, 120, 24, "brick"],
-	[2520, 380, 140, 24, "brick"],
-	[2680, 300, 160, 24, "brick"],
-	[2920, 400, 120, 24, "brick"],
-	[3140, 320, 180, 24, "brick"],
-	[3380, 260, 140, 24, "brick"],
+	[0, GROUND_Y, 520, 80, "ground"],
+	[620, GROUND_Y, 280, 80, "ground"],
+	[980, GROUND_Y, 360, 80, "ground"],
+	[1420, GROUND_Y, 320, 80, "ground"],
+	[1820, GROUND_Y, 420, 80, "ground"],
+	[2320, GROUND_Y, 520, 80, "ground"],
+	[2880, GROUND_Y, 640, 80, "ground"],
+	[180, 420, 160, 24, "wood"],
+	[420, 360, 120, 24, "cloud"],
+	[760, 400, 140, 24, "wood"],
+	[1080, 340, 120, 24, "cloud"],
+	[1280, 280, 160, 24, "wood"],
+	[1560, 380, 120, 24, "cloud"],
+	[1740, 300, 140, 24, "wood"],
+	[2060, 360, 160, 24, "cloud"],
+	[2280, 280, 120, 24, "wood"],
+	[2520, 380, 140, 24, "cloud"],
+	[2680, 300, 160, 24, "wood"],
+	[2920, 400, 120, 24, "cloud"],
+	[3140, 320, 180, 24, "wood"],
+	[3380, 260, 140, 24, "cloud"],
 ]
 
 const COINS: Array = [
@@ -54,12 +57,20 @@ const COINS: Array = [
 ]
 
 const ENEMIES: Array = [
-	{"pos": Vector2(760, 492), "left": 640, "right": 900},
-	{"pos": Vector2(1180, 492), "left": 1000, "right": 1320},
-	{"pos": Vector2(1620, 492), "left": 1440, "right": 1720},
-	{"pos": Vector2(2100, 492), "left": 1840, "right": 2220},
-	{"pos": Vector2(2580, 492), "left": 2340, "right": 2780},
-	{"pos": Vector2(3100, 492), "left": 2900, "right": 3380},
+	{"pos": Vector2(760, 492), "left": 640, "right": 900, "kind": "slime"},
+	{"pos": Vector2(1180, 492), "left": 1000, "right": 1320, "kind": "robot"},
+	{"pos": Vector2(1620, 492), "left": 1440, "right": 1720, "kind": "slime"},
+	{"pos": Vector2(2100, 492), "left": 1840, "right": 2220, "kind": "robot"},
+	{"pos": Vector2(2580, 492), "left": 2340, "right": 2780, "kind": "slime"},
+	{"pos": Vector2(3100, 492), "left": 2900, "right": 3380, "kind": "robot"},
+]
+
+const DECORATIONS: Array = [
+	{"pos": Vector2(140, 492), "kind": "bush"},
+	{"pos": Vector2(700, 492), "kind": "mushroom"},
+	{"pos": Vector2(1540, 492), "kind": "bush"},
+	{"pos": Vector2(2450, 492), "kind": "mushroom"},
+	{"pos": Vector2(3300, 492), "kind": "bush"},
 ]
 
 var player: CharacterBody2D
@@ -74,8 +85,10 @@ var respawn_point := Vector2(80, 460)
 
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_build_background()
 	_build_platforms()
+	_spawn_decorations()
 	_spawn_coins()
 	_spawn_enemies()
 	_spawn_flag()
@@ -84,7 +97,7 @@ func _ready() -> void:
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 8.0
 	camera.limit_left = 0
-	camera.limit_right = 3600
+	camera.limit_right = int(LEVEL_WIDTH)
 	camera.limit_top = 0
 	camera.limit_bottom = 720
 	add_child(camera)
@@ -123,39 +136,44 @@ func get_hud() -> Dictionary:
 
 
 func _build_background() -> void:
-	var sky_root := Node2D.new()
-	sky_root.z_index = -20
-	add_child(sky_root)
-	PixelAssets.fill_tiles(sky_root, PixelAssets.TEX_BG_SKY, Vector2(3600, 600))
+	var sky := ColorRect.new()
+	sky.size = Vector2(LEVEL_WIDTH, 560)
+	sky.color = PixelAssets.SKY_COLOR
+	sky.z_index = -30
+	add_child(sky)
 
-	for cloud_pos in [Vector2(180, 90), Vector2(620, 130), Vector2(1180, 70), Vector2(1760, 110), Vector2(2380, 85), Vector2(3020, 120)]:
+	var hills := Node2D.new()
+	hills.z_index = -22
+	hills.modulate = Color(1, 1, 1, 0.45)
+	add_child(hills)
+	for x in range(0, int(LEVEL_WIDTH), int(PixelAssets.BG_TILE_WORLD * 2)):
+		var hill := PixelAssets.make_bg_sprite(PixelAssets.TEX_BG_HILL)
+		hill.position = Vector2(x + PixelAssets.BG_TILE_WORLD, 430)
+		hills.add_child(hill)
+
+	var trees := Node2D.new()
+	trees.z_index = -20
+	trees.modulate = Color(1, 1, 1, 0.55)
+	add_child(trees)
+	for x in [180, 620, 1180, 1760, 2380, 3020]:
+		var tree := PixelAssets.make_bg_sprite(PixelAssets.TEX_BG_TREES)
+		tree.position = Vector2(x, 470)
+		trees.add_child(tree)
+
+	for cloud_pos in [Vector2(220, 110), Vector2(760, 80), Vector2(1380, 130), Vector2(2060, 95), Vector2(2860, 120), Vector2(3340, 70)]:
 		_add_cloud(cloud_pos)
-
-	for hill in [[120, 520, 220], [980, 520, 280], [2100, 520, 320], [3100, 520, 260]]:
-		_add_hill(Vector2(hill[0], hill[1]), hill[2])
 
 
 func _add_cloud(pos: Vector2) -> void:
 	var root := Node2D.new()
 	root.position = pos
-	root.z_index = -15
+	root.z_index = -18
+	root.modulate = Color(1, 1, 1, 0.85)
 	add_child(root)
-	for offset in [Vector2(-36, 0), Vector2(0, -10), Vector2(36, 0), Vector2(16, 8)]:
-		var puff := PixelAssets.make_sprite(PixelAssets.TEX_CLOUD, 2.5)
+	for offset in [Vector2(-48, 0), Vector2(-16, -12), Vector2(20, -4), Vector2(52, 2)]:
+		var puff := PixelAssets.make_bg_sprite(PixelAssets.TEX_BG_CLOUD, 1.6)
 		puff.position = offset
 		root.add_child(puff)
-
-
-func _add_hill(foot: Vector2, width: float) -> void:
-	var root := Node2D.new()
-	root.position = foot + Vector2(-width * 0.5, -PixelAssets.TILE_WORLD * 0.5)
-	root.z_index = -12
-	add_child(root)
-	var tiles := maxi(2, int(width / PixelAssets.TILE_WORLD))
-	for i in range(tiles):
-		var hill := PixelAssets.make_sprite(PixelAssets.TEX_HILL)
-		hill.position = Vector2(i * PixelAssets.TILE_WORLD + PixelAssets.TILE_WORLD * 0.5, PixelAssets.TILE_WORLD * 0.5)
-		root.add_child(hill)
 
 
 func _build_platforms() -> void:
@@ -177,10 +195,23 @@ func _add_platform(pos: Vector2, size: Vector2, style: String) -> void:
 
 	var visual := Node2D.new()
 	body.add_child(visual)
-	if style == "ground":
-		PixelAssets.build_ground_visual(visual, size)
-	else:
-		PixelAssets.build_brick_visual(visual, size)
+	match style:
+		"ground":
+			PixelAssets.build_ground_visual(visual, size)
+		"cloud":
+			PixelAssets.build_cloud_visual(visual, size)
+		_:
+			PixelAssets.build_wood_visual(visual, size)
+
+
+func _spawn_decorations() -> void:
+	for data in DECORATIONS:
+		var sprite := PixelAssets.make_sprite(
+			PixelAssets.TEX_BUSH if data["kind"] == "bush" else PixelAssets.TEX_MUSHROOM
+		)
+		sprite.position = data["pos"]
+		sprite.z_index = -2
+		add_child(sprite)
 
 
 func _spawn_coins() -> void:
@@ -224,7 +255,10 @@ func _spawn_enemies() -> void:
 		shape.position = Vector2(0, -14)
 		enemy.add_child(shape)
 
-		var sprite := PixelAssets.make_sprite(PixelAssets.TEX_ENEMY)
+		var texture := PixelAssets.TEX_ENEMY_SLIME
+		if data.get("kind", "slime") == "robot":
+			texture = PixelAssets.TEX_ENEMY_ROBOT
+		var sprite := PixelAssets.make_sprite(texture)
 		sprite.name = "Sprite"
 		sprite.position = Vector2(0, -18)
 		enemy.add_child(sprite)

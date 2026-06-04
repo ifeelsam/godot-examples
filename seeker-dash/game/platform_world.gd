@@ -1,6 +1,7 @@
 extends Node2D
 
 signal coin_collected(total: int)
+signal star_collected(total: int)
 signal enemy_stomped(total: int)
 signal player_died(deaths: int)
 signal level_finished(stats: Dictionary)
@@ -65,6 +66,15 @@ const ENEMIES: Array = [
 	{"pos": Vector2(3100, 310), "left": 2900, "right": 3380, "kind": "bird"},
 ]
 
+# Bonus gem stars. color picks the sprite tint variant.
+const STARS: Array = [
+	{"pos": Vector2(500, 300), "color": "yellow"},
+	{"pos": Vector2(1360, 230), "color": "green"},
+	{"pos": Vector2(2160, 250), "color": "red"},
+	{"pos": Vector2(2760, 250), "color": "yellow"},
+	{"pos": Vector2(3260, 270), "color": "green"},
+]
+
 const DECORATIONS: Array = [
 	{"pos": Vector2(140, 492), "kind": "bush"},
 	{"pos": Vector2(700, 492), "kind": "mushroom"},
@@ -77,6 +87,7 @@ var player: CharacterBody2D
 var camera: Camera2D
 var deaths := 0
 var coins := 0
+var stars := 0
 var stomps := 0
 var elapsed := 0.0
 var running := false
@@ -90,6 +101,7 @@ func _ready() -> void:
 	_build_platforms()
 	_spawn_decorations()
 	_spawn_coins()
+	_spawn_stars()
 	_spawn_enemies()
 	_spawn_flag()
 	_spawn_player()
@@ -116,6 +128,7 @@ func start_run() -> void:
 	finished = false
 	deaths = 0
 	coins = 0
+	stars = 0
 	stomps = 0
 	elapsed = 0.0
 	_reset_player()
@@ -129,6 +142,7 @@ func set_controls(direction: float, wants_jump: bool) -> void:
 func get_hud() -> Dictionary:
 	return {
 		"coins": coins,
+		"stars": stars,
 		"stomps": stomps,
 		"deaths": deaths,
 		"time": elapsed,
@@ -235,8 +249,41 @@ func _spawn_coins() -> void:
 		sprite.position = Vector2(0, -8)
 		coin.add_child(sprite)
 
-		coin.collected.connect(_on_coin_collected)
+		coin.collected.connect(_on_pickup)
 		add_child(coin)
+
+
+func _spawn_stars() -> void:
+	for data in STARS:
+		var star := Area2D.new()
+		star.position = data["pos"]
+		star.set_script(COIN_SCENE)
+		star.kind = "star"
+		star.value = 1
+		star.add_to_group("coin")
+		star.collision_layer = 0
+		star.collision_mask = 2
+		star.monitoring = true
+
+		var shape := CollisionShape2D.new()
+		var circle := CircleShape2D.new()
+		circle.radius = 18.0
+		shape.shape = circle
+		star.add_child(shape)
+
+		var texture := PixelAssets.TEX_STAR_YELLOW
+		match data.get("color", "yellow"):
+			"green":
+				texture = PixelAssets.TEX_STAR_GREEN
+			"red":
+				texture = PixelAssets.TEX_STAR_RED
+		var sprite := PixelAssets.make_sprite(texture)
+		sprite.name = "Sprite"
+		sprite.position = Vector2(0, -8)
+		star.add_child(sprite)
+
+		star.collected.connect(_on_pickup)
+		add_child(star)
 
 
 func _spawn_enemies() -> void:
@@ -368,9 +415,13 @@ func _on_enemy_touch_player(body: Node, enemy: Node) -> void:
 	player.take_damage()
 
 
-func _on_coin_collected() -> void:
-	coins += 1
-	emit_signal("coin_collected", coins)
+func _on_pickup(kind: String, value: int) -> void:
+	if kind == "star":
+		stars += value
+		emit_signal("star_collected", stars)
+	else:
+		coins += value
+		emit_signal("coin_collected", coins)
 
 
 func _on_enemy_stomped() -> void:
@@ -406,6 +457,7 @@ func _on_flag_reached() -> void:
 	running = false
 	emit_signal("level_finished", {
 		"coins": coins,
+		"stars": stars,
 		"stomps": stomps,
 		"deaths": deaths,
 		"time": elapsed,

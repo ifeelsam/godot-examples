@@ -1,41 +1,93 @@
 extends RefCounted
 class_name PixelAssets
 
-const TILE_SIZE := 18.0
-const DISPLAY_SCALE := 2.0
-const TILE_WORLD := TILE_SIZE * DISPLAY_SCALE
+# Art helper for the "Super Mango" pixel pack.
+# Tiles are authored at 16 px; tilesets are 3x3 (48x48) autotile blocks.
+# Characters / hazards live on 48 px animation strips. Backgrounds are 384x216
+# parallax layers. Everything renders with nearest-neighbour filtering.
 
-const CHAR_SIZE := 24.0
-const CHAR_DISPLAY_SCALE := TILE_WORLD / CHAR_SIZE
+const TILE := 16.0
+const WORLD_SCALE := 3.0
+const TILE_WORLD := TILE * WORLD_SCALE          # 48 px on screen
+const CHAR_SCALE := 3.0
+# Content in every 48 px cell rests with its feet near native y=32.
+const FEET_OFFSET := 8.0 * CHAR_SCALE           # sprite.y so feet sit on origin
+const PLAYER_FEET_OFFSET := 9.0 * CHAR_SCALE
 
-const BG_TILE_SIZE := 24.0
-const BG_DISPLAY_SCALE := 2.0
-const BG_TILE_WORLD := BG_TILE_SIZE * BG_DISPLAY_SCALE
+const SPRITES := "res://ui/sprites/"
 
-const TEX_COIN := preload("res://ui/pixel-platformer/Tiles/tile_0151.png")
-const TEX_FLAG := preload("res://ui/pixel-platformer/Tiles/tile_0111.png")
-const TEX_COIN_HUD := preload("res://ui/pixel-platformer/Tiles/tile_0152.png")
+# --- Characters ---------------------------------------------------------
+const PLAYER_SHEET := preload("res://ui/sprites/player/player.png")
+const PLAYER_FRAME := 48
 
-const TEX_GRASS_BLOCK := preload("res://ui/pixel-platformer/Tiles/tile_0022.png")
-const TEX_DIRT_BLOCK := preload("res://ui/pixel-platformer/Tiles/tile_0122.png")
-const TEX_WOOD_BLOCK := preload("res://ui/pixel-platformer/Tiles/tile_0050.png")
-const TEX_CLOUD_BLOCK := preload("res://ui/pixel-platformer/Tiles/tile_0081.png")
+const TEX_SPIDER := preload("res://ui/sprites/entities/spider.png")
+const TEX_JUMPING_SPIDER := preload("res://ui/sprites/entities/jumping_spider.png")
+const TEX_BIRD := preload("res://ui/sprites/entities/bird.png")
+const TEX_FASTER_BIRD := preload("res://ui/sprites/entities/faster_bird.png")
+const TEX_FISH := preload("res://ui/sprites/entities/fish.png")
+const TEX_FASTER_FISH := preload("res://ui/sprites/entities/faster_fish.png")
 
-const TEX_PLAYER := preload("res://ui/pixel-platformer/Tiles/Characters/tile_0021.png")
-const TEX_ENEMY_SLIME := preload("res://ui/pixel-platformer/Tiles/Characters/tile_0012.png")
-const TEX_ENEMY_ROBOT := preload("res://ui/pixel-platformer/Tiles/Characters/tile_0008.png")
+# --- Collectibles -------------------------------------------------------
+const TEX_COIN := preload("res://ui/sprites/collectibles/coin.png")
+const TEX_STAR_YELLOW := preload("res://ui/sprites/collectibles/star_yellow.png")
+const TEX_STAR_GREEN := preload("res://ui/sprites/collectibles/star_green.png")
+const TEX_STAR_RED := preload("res://ui/sprites/collectibles/star_red.png")
+const TEX_LAST_STAR := preload("res://ui/sprites/collectibles/last_star.png")
 
-const TEX_BUSH := preload("res://ui/pixel-platformer/Tiles/tile_0056.png")
-const TEX_MUSHROOM := preload("res://ui/pixel-platformer/Tiles/tile_0093.png")
+# --- Hazards ------------------------------------------------------------
+const TEX_SPIKE := preload("res://ui/sprites/hazards/spike.png")
+const TEX_SPIKE_BLOCK := preload("res://ui/sprites/hazards/spike_block.png")
+const TEX_SPIKE_PLATFORM := preload("res://ui/sprites/hazards/spike_platform.png")
+const TEX_CIRCULAR_SAW := preload("res://ui/sprites/hazards/circular_saw.png")
+const TEX_FIRE_FLAME := preload("res://ui/sprites/hazards/fire_flame.png")
+const TEX_BLUE_FLAME := preload("res://ui/sprites/hazards/blue_flame.png")
+const TEX_AXE_TRAP := preload("res://ui/sprites/hazards/axe_trap.png")
 
-const TEX_BG_HILL := preload("res://ui/pixel-platformer/Tiles/Backgrounds/tile_0014.png")
-const TEX_BG_TREES := preload("res://ui/pixel-platformer/Tiles/Backgrounds/tile_0015.png")
-const TEX_BG_CLOUD := preload("res://ui/pixel-platformer/Tiles/Backgrounds/tile_0008.png")
+# --- Tilesets (3x3, 16 px tiles) ---------------------------------------
+const TILESET_GRASS := preload("res://ui/sprites/levels/grass_tileset.png")
+const TILESET_GRASS_ROCK := preload("res://ui/sprites/levels/grass_rock_tileset.png")
+const TILESET_BRICK := preload("res://ui/sprites/levels/brick_tileset.png")
+const TILESET_STONE := preload("res://ui/sprites/levels/stone_tileset.png")
+const TILESET_LEAF := preload("res://ui/sprites/levels/leaf_tileset.png")
+const TILESET_CLOUD := preload("res://ui/sprites/levels/cloud_tileset.png")
+const TILESET_GRASS_GROUND := preload("res://ui/sprites/levels/grass_platform.png")
 
-const SKY_COLOR := Color(0.67, 0.9, 0.96)
+# --- Surfaces -----------------------------------------------------------
+const TEX_BRIDGE := preload("res://ui/sprites/surfaces/bridge.png")
+const TEX_FLOAT_PLATFORM := preload("res://ui/sprites/surfaces/float_platform.png")
+const TEX_LADDER := preload("res://ui/sprites/surfaces/ladder.png")
+const TEX_VINE_GREEN := preload("res://ui/sprites/surfaces/vine_green.png")
+const TEX_BOUNCEPAD := preload("res://ui/sprites/surfaces/bouncepad_high.png")
+const TEX_BOUNCEPAD_MED := preload("res://ui/sprites/surfaces/bouncepad_medium.png")
+
+# --- Backgrounds / foregrounds -----------------------------------------
+const BG_SKY := preload("res://ui/sprites/backgrounds/sky_blue.png")
+const BG_GLACIAL := preload("res://ui/sprites/backgrounds/glacial_mountains_lightened.png")
+const BG_CLOUDS_BG := preload("res://ui/sprites/backgrounds/clouds_bg.png")
+const BG_CLOUDS_1 := preload("res://ui/sprites/backgrounds/clouds_mg_1.png")
+const BG_CLOUDS_2 := preload("res://ui/sprites/backgrounds/clouds_mg_2.png")
+const BG_CLOUDS_3 := preload("res://ui/sprites/backgrounds/clouds_mg_3.png")
+const BG_FOREST_LEAFS := preload("res://ui/sprites/backgrounds/forest_leafs.png")
+const FG_FOG_1 := preload("res://ui/sprites/foregrounds/fog_1.png")
+const FG_WATER := preload("res://ui/sprites/foregrounds/water.png")
+
+# --- Screens / HUD ------------------------------------------------------
+const TEX_LOGO := preload("res://ui/sprites/screens/start_menu_logo.png")
+const TEX_HUD_COINS := preload("res://ui/sprites/screens/hud_coins.png")
+
+# Backwards-compatible aliases used by the shell / wallet gate.
+const TEX_COIN_HUD := TEX_HUD_COINS
+const TEX_FLAG := TEX_LAST_STAR
+
+const FONT := preload("res://ui/fonts/round9x13.ttf")
+
+const SKY_COLOR := Color(0.031, 0.663, 0.988)   # sky_blue.png solid fill
 
 
-static func make_sprite(texture: Texture2D, scale_factor: float = DISPLAY_SCALE) -> Sprite2D:
+# ----------------------------------------------------------------------
+# Sprite factories
+# ----------------------------------------------------------------------
+static func make_sprite(texture: Texture2D, scale_factor: float = WORLD_SCALE) -> Sprite2D:
 	var sprite := Sprite2D.new()
 	sprite.texture = texture
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -44,37 +96,122 @@ static func make_sprite(texture: Texture2D, scale_factor: float = DISPLAY_SCALE)
 	return sprite
 
 
-static func make_character_sprite(texture: Texture2D) -> Sprite2D:
-	return make_sprite(texture, CHAR_DISPLAY_SCALE)
+static func _atlas(sheet: Texture2D, col: int, row: int, fw: int, fh: int) -> AtlasTexture:
+	var at := AtlasTexture.new()
+	at.atlas = sheet
+	at.region = Rect2(col * fw, row * fh, fw, fh)
+	at.filter_clip = true
+	return at
 
 
-static func make_bg_sprite(texture: Texture2D, scale_factor: float = BG_DISPLAY_SCALE) -> Sprite2D:
-	return make_sprite(texture, scale_factor)
+# Single-frame icon from a sheet, for UI use (e.g. the idle player face).
+static func player_icon() -> AtlasTexture:
+	return _atlas(PLAYER_SHEET, 0, 0, PLAYER_FRAME, PLAYER_FRAME)
 
 
-static func fill_blocks(parent: Node, size: Vector2, texture: Texture2D, offset := Vector2.ZERO) -> void:
-	var cols := maxi(1, int(ceil(size.x / TILE_WORLD)))
-	var rows := maxi(1, int(ceil(size.y / TILE_WORLD)))
-	for y in range(rows):
-		for x in range(cols):
-			var sprite := make_sprite(texture)
-			sprite.position = offset + Vector2(
-				x * TILE_WORLD + TILE_WORLD * 0.5,
-				y * TILE_WORLD + TILE_WORLD * 0.5
-			)
-			parent.add_child(sprite)
+# Build an AnimatedSprite2D from a horizontal strip (single row, all columns).
+static func make_strip_anim(sheet: Texture2D, frame: int, fps: float, scale_factor: float = CHAR_SCALE, loop: bool = true) -> AnimatedSprite2D:
+	var frame_h := int(sheet.get_height())
+	var cols := int(sheet.get_width() / frame)
+	var frames := SpriteFrames.new()
+	frames.set_animation_speed("default", fps)
+	frames.set_animation_loop("default", loop)
+	for c in range(cols):
+		frames.add_frame("default", _atlas(sheet, c, 0, frame, frame_h))
+	var node := AnimatedSprite2D.new()
+	node.sprite_frames = frames
+	node.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	node.scale = Vector2(scale_factor, scale_factor)
+	node.centered = true
+	node.play("default")
+	return node
 
 
-static func build_ground_visual(parent: Node, size: Vector2) -> void:
-	fill_blocks(parent, Vector2(size.x, TILE_WORLD), TEX_GRASS_BLOCK)
-	var fill_height := size.y - TILE_WORLD
-	if fill_height > 0.0:
-		fill_blocks(parent, Vector2(size.x, fill_height), TEX_DIRT_BLOCK, Vector2(0.0, TILE_WORLD))
+# Player sheet: 4 cols x 6 rows of 48 px frames. Named animations mapped from
+# the sheet layout (idle/run/jump/fall/hurt).
+static func make_player_sprite() -> AnimatedSprite2D:
+	var f := SpriteFrames.new()
+	f.remove_animation("default")
+	_add_anim(f, "idle", [[0, 0], [1, 0], [2, 0], [3, 0]], 6.0, true)
+	_add_anim(f, "run", [[0, 1], [1, 1], [2, 1], [3, 1]], 12.0, true)
+	_add_anim(f, "jump", [[0, 2]], 1.0, false)
+	_add_anim(f, "fall", [[1, 2]], 1.0, false)
+	_add_anim(f, "hurt", [[0, 5], [1, 5], [2, 5]], 8.0, false)
+	var node := AnimatedSprite2D.new()
+	node.sprite_frames = f
+	node.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	node.scale = Vector2(CHAR_SCALE, CHAR_SCALE)
+	node.centered = true
+	node.animation = "idle"
+	node.play("idle")
+	return node
 
 
-static func build_wood_visual(parent: Node, size: Vector2) -> void:
-	fill_blocks(parent, size, TEX_WOOD_BLOCK)
+static func _add_anim(frames: SpriteFrames, name: String, cells: Array, fps: float, loop: bool) -> void:
+	frames.add_animation(name)
+	frames.set_animation_loop(name, loop)
+	frames.set_animation_speed(name, fps)
+	for cell in cells:
+		frames.add_frame(name, _atlas(PLAYER_SHEET, cell[0], cell[1], PLAYER_FRAME, PLAYER_FRAME))
 
 
-static func build_cloud_visual(parent: Node, size: Vector2) -> void:
-	fill_blocks(parent, size, TEX_CLOUD_BLOCK)
+# ----------------------------------------------------------------------
+# Tileset 9-slice rendering
+# ----------------------------------------------------------------------
+# Renders a WxH region using a 3x3 (16 px) tileset: corners, edges, centre fill.
+static func build_tileset_box(parent: Node, size: Vector2, tileset: Texture2D) -> void:
+	var cols := maxi(1, int(round(size.x / TILE_WORLD)))
+	var rows := maxi(1, int(round(size.y / TILE_WORLD)))
+	for ry in range(rows):
+		for rx in range(cols):
+			var tx := 1
+			var ty := 1
+			if rx == 0:
+				tx = 0
+			elif rx == cols - 1:
+				tx = 2
+			if ry == 0:
+				ty = 0
+			elif ry == rows - 1:
+				ty = 2
+			if cols == 1:
+				tx = 1
+			if rows == 1:
+				ty = 1
+			var tile := make_sprite(_atlas(tileset, tx, ty, int(TILE), int(TILE)))
+			tile.position = Vector2(rx * TILE_WORLD + TILE_WORLD * 0.5, ry * TILE_WORLD + TILE_WORLD * 0.5)
+			parent.add_child(tile)
+
+
+# Ground: grass-topped dirt that runs off the bottom of the screen.
+static func build_ground(parent: Node, size: Vector2) -> void:
+	var cols := maxi(1, int(round(size.x / TILE_WORLD)))
+	var rows := maxi(1, int(round(size.y / TILE_WORLD)))
+	for ry in range(rows):
+		for rx in range(cols):
+			var tx := 1
+			if rx == 0:
+				tx = 0
+			elif rx == cols - 1:
+				tx = 2
+			var ty := 0 if ry == 0 else 1
+			if cols == 1:
+				tx = 1
+			var tile := make_sprite(_atlas(TILESET_GRASS_GROUND, tx, ty, int(TILE), int(TILE)))
+			tile.position = Vector2(rx * TILE_WORLD + TILE_WORLD * 0.5, ry * TILE_WORLD + TILE_WORLD * 0.5)
+			parent.add_child(tile)
+
+
+# ----------------------------------------------------------------------
+# UI theme (crisp pixel font)
+# ----------------------------------------------------------------------
+static func make_ui_theme(base_size: int = 26) -> Theme:
+	if FONT is FontFile:
+		FONT.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+		FONT.hinting = TextServer.HINTING_NONE
+		FONT.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+		FONT.force_autohinter = false
+	var theme := Theme.new()
+	theme.default_font = FONT
+	theme.default_font_size = base_size
+	return theme

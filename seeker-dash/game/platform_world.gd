@@ -10,34 +10,36 @@ const PLAYER_SCENE := preload("res://game/player.gd")
 const ENEMY_SCENE := preload("res://game/enemy.gd")
 const COIN_SCENE := preload("res://game/coin.gd")
 const FLAG_SCENE := preload("res://game/flag.gd")
+const HAZARD_SCENE := preload("res://game/hazard.gd")
+const BOUNCEPAD_SCENE := preload("res://game/bouncepad.gd")
 
 const LEVEL_WIDTH := 3600.0
 const GROUND_Y := 520.0
 
 # Each platform: [x, y, width, height, style]
-# style: "ground" | "wood" | "cloud"
+# style: "ground" | "grass" | "stone" | "brick" | "cloud" | "leaf"
 const PLATFORMS: Array = [
-	[0, GROUND_Y, 520, 80, "ground"],
-	[620, GROUND_Y, 280, 80, "ground"],
-	[980, GROUND_Y, 360, 80, "ground"],
-	[1420, GROUND_Y, 320, 80, "ground"],
-	[1820, GROUND_Y, 420, 80, "ground"],
-	[2320, GROUND_Y, 520, 80, "ground"],
-	[2880, GROUND_Y, 640, 80, "ground"],
-	[180, 420, 160, 24, "wood"],
-	[420, 360, 120, 24, "cloud"],
-	[760, 400, 140, 24, "wood"],
-	[1080, 340, 120, 24, "cloud"],
-	[1280, 280, 160, 24, "wood"],
-	[1560, 380, 120, 24, "cloud"],
-	[1740, 300, 140, 24, "wood"],
-	[2060, 360, 160, 24, "cloud"],
-	[2280, 280, 120, 24, "wood"],
-	[2520, 380, 140, 24, "cloud"],
-	[2680, 300, 160, 24, "wood"],
-	[2920, 400, 120, 24, "cloud"],
-	[3140, 320, 180, 24, "wood"],
-	[3380, 260, 140, 24, "cloud"],
+	[0, GROUND_Y, 520, 96, "ground"],
+	[620, GROUND_Y, 280, 96, "ground"],
+	[980, GROUND_Y, 360, 96, "ground"],
+	[1420, GROUND_Y, 320, 96, "ground"],
+	[1820, GROUND_Y, 420, 96, "ground"],
+	[2320, GROUND_Y, 520, 96, "ground"],
+	[2880, GROUND_Y, 640, 96, "ground"],
+	[180, 420, 144, 48, "grass"],
+	[420, 360, 96, 48, "cloud"],
+	[760, 400, 144, 48, "stone"],
+	[1080, 340, 96, 48, "cloud"],
+	[1280, 280, 144, 48, "brick"],
+	[1560, 380, 96, 48, "cloud"],
+	[1740, 300, 144, 48, "grass"],
+	[2060, 360, 144, 48, "stone"],
+	[2280, 280, 96, 48, "cloud"],
+	[2520, 380, 144, 48, "leaf"],
+	[2680, 300, 144, 48, "brick"],
+	[2920, 400, 96, 48, "cloud"],
+	[3140, 320, 192, 48, "grass"],
+	[3380, 260, 144, 48, "stone"],
 ]
 
 const COINS: Array = [
@@ -75,12 +77,18 @@ const STARS: Array = [
 	{"pos": Vector2(3260, 270), "color": "green"},
 ]
 
-const DECORATIONS: Array = [
-	{"pos": Vector2(140, 492), "kind": "bush"},
-	{"pos": Vector2(700, 492), "kind": "mushroom"},
-	{"pos": Vector2(1540, 492), "kind": "bush"},
-	{"pos": Vector2(2450, 492), "kind": "mushroom"},
-	{"pos": Vector2(3300, 492), "kind": "bush"},
+# Death traps. spikes/flame sit on the ground; saw floats and spins; axe swings.
+const HAZARDS: Array = [
+	{"pos": Vector2(1120, GROUND_Y), "kind": "spikes"},
+	{"pos": Vector2(2020, GROUND_Y), "kind": "flame"},
+	{"pos": Vector2(820, 250), "kind": "saw"},
+	{"pos": Vector2(2280, 285), "kind": "axe"},
+]
+
+# Trampolines that fling the player toward the high platforms.
+const BOUNCEPADS: Array = [
+	{"pos": Vector2(700, GROUND_Y)},
+	{"pos": Vector2(2380, GROUND_Y)},
 ]
 
 var player: CharacterBody2D
@@ -100,6 +108,8 @@ func _ready() -> void:
 	_build_background()
 	_build_platforms()
 	_spawn_decorations()
+	_spawn_hazards()
+	_spawn_bouncepads()
 	_spawn_coins()
 	_spawn_stars()
 	_spawn_enemies()
@@ -150,44 +160,40 @@ func get_hud() -> Dictionary:
 
 
 func _build_background() -> void:
+	var sky_layer := CanvasLayer.new()
+	sky_layer.layer = -20
+	add_child(sky_layer)
 	var sky := ColorRect.new()
-	sky.size = Vector2(LEVEL_WIDTH, 560)
 	sky.color = PixelAssets.SKY_COLOR
-	sky.z_index = -30
-	add_child(sky)
+	sky.size = Vector2(1280, 720)
+	sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sky_layer.add_child(sky)
 
-	var hills := Node2D.new()
-	hills.z_index = -22
-	hills.modulate = Color(1, 1, 1, 0.45)
-	add_child(hills)
-	for x in range(0, int(LEVEL_WIDTH), int(PixelAssets.BG_TILE_WORLD * 2)):
-		var hill := PixelAssets.make_bg_sprite(PixelAssets.TEX_BG_HILL)
-		hill.position = Vector2(x + PixelAssets.BG_TILE_WORLD, 430)
-		hills.add_child(hill)
-
-	var trees := Node2D.new()
-	trees.z_index = -20
-	trees.modulate = Color(1, 1, 1, 0.55)
-	add_child(trees)
-	for x in [180, 620, 1180, 1760, 2380, 3020]:
-		var tree := PixelAssets.make_bg_sprite(PixelAssets.TEX_BG_TREES)
-		tree.position = Vector2(x, 470)
-		trees.add_child(tree)
-
-	for cloud_pos in [Vector2(220, 110), Vector2(760, 80), Vector2(1380, 130), Vector2(2060, 95), Vector2(2860, 120), Vector2(3340, 70)]:
-		_add_cloud(cloud_pos)
+	var px := ParallaxBackground.new()
+	px.layer = -10
+	add_child(px)
+	_add_parallax(px, PixelAssets.BG_GLACIAL, 0.12, 1.0)
+	_add_parallax(px, PixelAssets.BG_CLOUDS_BG, 0.22, 1.0)
+	_add_parallax(px, PixelAssets.BG_CLOUDS_3, 0.32, 1.0)
+	_add_parallax(px, PixelAssets.BG_CLOUDS_2, 0.42, 1.0)
+	_add_parallax(px, PixelAssets.BG_CLOUDS_1, 0.52, 1.0)
+	_add_parallax(px, PixelAssets.FG_FOG_1, 0.78, 0.4)
 
 
-func _add_cloud(pos: Vector2) -> void:
-	var root := Node2D.new()
-	root.position = pos
-	root.z_index = -18
-	root.modulate = Color(1, 1, 1, 0.85)
-	add_child(root)
-	for offset in [Vector2(-48, 0), Vector2(-16, -12), Vector2(20, -4), Vector2(52, 2)]:
-		var puff := PixelAssets.make_bg_sprite(PixelAssets.TEX_BG_CLOUD, 1.6)
-		puff.position = offset
-		root.add_child(puff)
+func _add_parallax(px: ParallaxBackground, tex: Texture2D, motion: float, alpha: float) -> void:
+	var layer := ParallaxLayer.new()
+	layer.motion_scale = Vector2(motion, motion)
+	var scale := 720.0 / tex.get_height()
+	layer.motion_mirroring = Vector2(tex.get_width() * scale, 0)
+	px.add_child(layer)
+
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = false
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.scale = Vector2(scale, scale)
+	spr.modulate = Color(1, 1, 1, alpha)
+	layer.add_child(spr)
 
 
 func _build_platforms() -> void:
@@ -196,36 +202,162 @@ func _build_platforms() -> void:
 
 
 func _add_platform(pos: Vector2, size: Vector2, style: String) -> void:
+	var cols := maxi(1, int(round(size.x / PixelAssets.TILE_WORLD)))
+	var rows := maxi(1, int(round(size.y / PixelAssets.TILE_WORLD)))
+	var snapped := Vector2(cols * PixelAssets.TILE_WORLD, rows * PixelAssets.TILE_WORLD)
+
 	var body := StaticBody2D.new()
 	body.position = pos
 	add_child(body)
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = size
+	rect.size = snapped
 	shape.shape = rect
-	shape.position = size * 0.5
+	shape.position = snapped * 0.5
 	body.add_child(shape)
 
 	var visual := Node2D.new()
 	body.add_child(visual)
+
+	if style == "ground":
+		PixelAssets.build_ground(visual, snapped)
+		return
+
+	var tileset := PixelAssets.TILESET_GRASS
 	match style:
-		"ground":
-			PixelAssets.build_ground_visual(visual, size)
+		"stone":
+			tileset = PixelAssets.TILESET_STONE
+		"brick":
+			tileset = PixelAssets.TILESET_BRICK
 		"cloud":
-			PixelAssets.build_cloud_visual(visual, size)
-		_:
-			PixelAssets.build_wood_visual(visual, size)
+			tileset = PixelAssets.TILESET_CLOUD
+		"leaf":
+			tileset = PixelAssets.TILESET_LEAF
+	PixelAssets.build_tileset_box(visual, snapped, tileset)
 
 
 func _spawn_decorations() -> void:
-	for data in DECORATIONS:
-		var sprite := PixelAssets.make_sprite(
-			PixelAssets.TEX_BUSH if data["kind"] == "bush" else PixelAssets.TEX_MUSHROOM
-		)
-		sprite.position = data["pos"]
-		sprite.z_index = -2
-		add_child(sprite)
+	# Vine clumps rooted on the ground for a bit of forest depth.
+	for x in [150, 590, 1560, 2470, 3320]:
+		var vine := PixelAssets.make_sprite(PixelAssets.TEX_VINE_GREEN)
+		vine.position = Vector2(x, GROUND_Y - 72.0)
+		vine.z_index = -2
+		add_child(vine)
+
+
+func _spawn_hazards() -> void:
+	for data in HAZARDS:
+		match data.get("kind", "spikes"):
+			"flame":
+				_add_flame(data["pos"])
+			"saw":
+				_add_saw(data["pos"])
+			"axe":
+				_add_axe(data["pos"])
+			_:
+				_add_spikes(data["pos"])
+
+
+func _add_spikes(pos: Vector2) -> void:
+	var hz := Area2D.new()
+	hz.set_script(HAZARD_SCENE)
+	hz.position = pos
+	add_child(hz)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(120, 24)
+	shape.shape = rect
+	shape.position = Vector2(0, -18)
+	hz.add_child(shape)
+
+	var spr := PixelAssets.make_sprite(PixelAssets.TEX_SPIKE_PLATFORM)
+	spr.position = Vector2(0, -24)
+	hz.add_child(spr)
+
+
+func _add_flame(pos: Vector2) -> void:
+	var hz := Area2D.new()
+	hz.set_script(HAZARD_SCENE)
+	hz.position = pos
+	add_child(hz)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(26, 56)
+	shape.shape = rect
+	shape.position = Vector2(0, -32)
+	hz.add_child(shape)
+
+	var anim := PixelAssets.make_strip_anim(PixelAssets.TEX_FIRE_FLAME, PixelAssets.PLAYER_FRAME, 9.0)
+	anim.position = Vector2(0, -PixelAssets.FEET_OFFSET)
+	hz.add_child(anim)
+
+
+func _add_saw(pos: Vector2) -> void:
+	var hz := Area2D.new()
+	hz.set_script(HAZARD_SCENE)
+	hz.position = pos
+	add_child(hz)
+
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 40.0
+	shape.shape = circle
+	hz.add_child(shape)
+
+	var spr := PixelAssets.make_sprite(PixelAssets.TEX_CIRCULAR_SAW)
+	hz.add_child(spr)
+	var spin := spr.create_tween().set_loops()
+	spin.tween_property(spr, "rotation", TAU, 0.6).from(0.0)
+
+
+func _add_axe(pos: Vector2) -> void:
+	var pivot := Node2D.new()
+	pivot.position = pos
+	add_child(pivot)
+
+	var hz := Area2D.new()
+	hz.set_script(HAZARD_SCENE)
+	pivot.add_child(hz)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(34, 48)
+	shape.shape = rect
+	shape.position = Vector2(0, 176)
+	hz.add_child(shape)
+
+	var spr := PixelAssets.make_sprite(PixelAssets.TEX_AXE_TRAP)
+	spr.position = Vector2(0, 96)
+	pivot.add_child(spr)
+
+	var swing := pivot.create_tween().set_loops()
+	swing.tween_property(pivot, "rotation", 0.85, 1.1).from(-0.85).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	swing.tween_callback(func() -> void: Sfx.play("axe", -8.0))
+	swing.tween_property(pivot, "rotation", -0.85, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	swing.tween_callback(func() -> void: Sfx.play("axe", -8.0))
+
+
+func _spawn_bouncepads() -> void:
+	for data in BOUNCEPADS:
+		var pad := Area2D.new()
+		pad.set_script(BOUNCEPAD_SCENE)
+		pad.position = data["pos"]
+		add_child(pad)
+
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(120, 46)
+		shape.shape = rect
+		shape.position = Vector2(0, -44)
+		pad.add_child(shape)
+
+		var anim := PixelAssets.make_strip_anim(PixelAssets.TEX_BOUNCEPAD, PixelAssets.PLAYER_FRAME, 18.0, PixelAssets.CHAR_SCALE, false)
+		anim.position = Vector2(0, -PixelAssets.FEET_OFFSET)
+		pad.add_child(anim)
+		pad.bind_anim(anim)
 
 
 func _spawn_coins() -> void:
@@ -327,7 +459,7 @@ func _spawn_enemies() -> void:
 
 func _spawn_flag() -> void:
 	var flag := Area2D.new()
-	flag.position = Vector2(3480, 420)
+	flag.position = Vector2(3460, GROUND_Y)
 	flag.set_script(FLAG_SCENE)
 	flag.collision_layer = 0
 	flag.collision_mask = 2
@@ -335,14 +467,24 @@ func _spawn_flag() -> void:
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(24, 96)
+	rect.size = Vector2(48, 280)
 	shape.shape = rect
-	shape.position = Vector2(0, -48)
+	shape.position = Vector2(0, -140)
 	flag.add_child(shape)
 
-	var sprite := PixelAssets.make_sprite(PixelAssets.TEX_FLAG, 2.5)
-	sprite.position = Vector2(0, -54)
-	flag.add_child(sprite)
+	# Beanstalk pole topped with the goal star.
+	for i in range(2):
+		var seg := PixelAssets.make_sprite(PixelAssets.TEX_VINE_GREEN)
+		seg.position = Vector2(0, -72.0 - i * 144.0)
+		flag.add_child(seg)
+
+	var star := PixelAssets.make_sprite(PixelAssets.TEX_LAST_STAR, 4.0)
+	star.position = Vector2(0, -300)
+	flag.add_child(star)
+
+	var pulse := star.create_tween().set_loops()
+	pulse.tween_property(star, "scale", Vector2(4.6, 4.6), 0.6).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(star, "scale", Vector2(4.0, 4.0), 0.6).set_trans(Tween.TRANS_SINE)
 
 	flag.reached.connect(_on_flag_reached)
 	add_child(flag)

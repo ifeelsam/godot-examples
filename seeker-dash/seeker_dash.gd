@@ -102,14 +102,9 @@ func _setup_wallet() -> void:
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color(0.04, 0.06, 0.1)
+	bg.color = PixelAssets.SKY_COLOR.darkened(0.35)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
-
-	var bg_tiles := PIXEL.make_texture_rect(PIXEL.TEX_BG_SKY, get_viewport_rect().size)
-	bg_tiles.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_tiles.modulate = Color(0.55, 0.55, 0.65, 0.35)
-	add_child(bg_tiles)
 
 	game_root = Control.new()
 	game_root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -118,10 +113,11 @@ func _build_ui() -> void:
 	viewport_container = SubViewportContainer.new()
 	viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
 	viewport_container.stretch = true
+	viewport_container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	game_root.add_child(viewport_container)
 
 	sub_viewport = SubViewport.new()
-	sub_viewport.size = Vector2(960, 540)
+	sub_viewport.size = Vector2(1280, 720)
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub_viewport.handle_input_locally = false
 	viewport_container.add_child(sub_viewport)
@@ -216,9 +212,9 @@ func _make_hud_bar() -> PanelContainer:
 	bar.offset_bottom = 72
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.1, 0.16, 0.92)
+	style.bg_color = Color(0.08, 0.12, 0.18, 0.82)
 	style.set_corner_radius_all(0)
-	style.border_color = Color(0.45, 0.65, 0.35, 0.65)
+	style.border_color = Color(0.35, 0.55, 0.75, 0.55)
 	style.set_border_width_all(2)
 	style.content_margin_left = 18
 	style.content_margin_right = 18

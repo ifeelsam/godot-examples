@@ -79,6 +79,7 @@ func _setup_world() -> void:
 	sub_viewport.add_child(world)
 
 	world.coin_collected.connect(_on_coin_collected)
+	world.star_collected.connect(_on_star_collected)
 	world.enemy_stomped.connect(_on_enemy_stomped)
 	world.player_died.connect(_on_player_died)
 	world.level_finished.connect(_on_level_finished)
@@ -100,6 +101,8 @@ func _setup_wallet() -> void:
 
 
 func _build_ui() -> void:
+	theme = PixelAssets.make_ui_theme(24)
+
 	var bg := ColorRect.new()
 	bg.color = PixelAssets.SKY_COLOR.darkened(0.35)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -286,9 +289,10 @@ func _make_results_panel() -> PanelContainer:
 	hero_row.add_child(flag_icon)
 
 	var title := Label.new()
-	title.text = "Level Complete"
+	title.text = "STAGE CLEAR!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_font_size_override("font_size", 39)
+	title.add_theme_color_override("font_color", COLOR_GOLD)
 	hero_row.add_child(title)
 
 	panel.set_meta("stack", stack)
@@ -393,6 +397,7 @@ func _on_gate_skip_pressed() -> void:
 
 
 func _on_play_again_pressed() -> void:
+	Sfx.play("confirm")
 	if wallet_adapter.is_wallet_connected():
 		_start_run()
 	else:
@@ -403,6 +408,10 @@ func _on_coin_collected(total: int) -> void:
 	if total > 0 and total % CHECKPOINT_COINS == 0 and total != last_checkpoint:
 		last_checkpoint = total
 		_toast("Checkpoint: %d coins" % total)
+
+
+func _on_star_collected(total: int) -> void:
+	_toast("Bonus star collected! (%d)" % total)
 
 
 func _on_enemy_stomped(_total: int) -> void:
@@ -418,6 +427,7 @@ func _on_level_finished(stats: Dictionary) -> void:
 
 	var time: float = stats.get("time", 0.0)
 	var coin_count: int = stats.get("coins", 0)
+	var star_count: int = stats.get("stars", 0)
 	var death_count: int = stats.get("deaths", 0)
 	var stomp_count: int = stats.get("stomps", 0)
 
@@ -431,9 +441,10 @@ func _on_level_finished(stats: Dictionary) -> void:
 	if improved:
 		_save_best()
 
-	results_label.text = "Time %0.1fs\n%d coins  •  %d stomps  •  %d deaths" % [
-		time, coin_count, stomp_count, death_count
+	results_label.text = "TIME %0.1fs\n%d COINS   %d STARS\n%d STOMPS   %d DEATHS" % [
+		time, coin_count, star_count, stomp_count, death_count
 	]
+	Sfx.play("confirm")
 	results_panel.visible = true
 	_sign_level_clear(stats)
 	_refresh_hud()
@@ -457,6 +468,7 @@ func _sign_level_clear(stats: Dictionary) -> void:
 
 
 func _on_disconnect_pressed() -> void:
+	Sfx.play("confirm")
 	wallet_adapter.disconnect_wallet()
 
 
@@ -512,16 +524,15 @@ func _refresh_hud() -> void:
 	if world == null:
 		return
 	var hud: Dictionary = world.get_hud()
-	hud_label.text = "Coins %d   Stomps %d   Deaths %d   Time %0.1fs" % [
+	hud_label.text = "COINS %d    STARS %d    TIME %0.1fs" % [
 		hud.get("coins", 0),
-		hud.get("stomps", 0),
-		hud.get("deaths", 0),
+		hud.get("stars", 0),
 		hud.get("time", 0.0),
 	]
 	if best_time < 9999.0:
-		best_label.text = "Best %0.1fs  •  %d coins" % [best_time, best_coins]
+		best_label.text = "BEST %0.1fs  -  %d COINS" % [best_time, best_coins]
 	else:
-		best_label.text = "Set a best time by finishing the level"
+		best_label.text = "Reach the goal star to set a record"
 
 
 func _short_address(address: String) -> String:

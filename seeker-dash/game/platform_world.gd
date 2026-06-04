@@ -57,12 +57,12 @@ const COINS: Array = [
 ]
 
 const ENEMIES: Array = [
-	{"pos": Vector2(760, 492), "left": 640, "right": 900, "kind": "slime"},
-	{"pos": Vector2(1180, 492), "left": 1000, "right": 1320, "kind": "robot"},
-	{"pos": Vector2(1620, 492), "left": 1440, "right": 1720, "kind": "slime"},
-	{"pos": Vector2(2100, 492), "left": 1840, "right": 2220, "kind": "robot"},
-	{"pos": Vector2(2580, 492), "left": 2340, "right": 2780, "kind": "slime"},
-	{"pos": Vector2(3100, 492), "left": 2900, "right": 3380, "kind": "robot"},
+	{"pos": Vector2(760, 500), "left": 640, "right": 900, "kind": "spider"},
+	{"pos": Vector2(1180, 320), "left": 1000, "right": 1340, "kind": "bird"},
+	{"pos": Vector2(1620, 500), "left": 1440, "right": 1720, "kind": "spider"},
+	{"pos": Vector2(2100, 300), "left": 1860, "right": 2240, "kind": "fish"},
+	{"pos": Vector2(2580, 500), "left": 2340, "right": 2780, "kind": "spider"},
+	{"pos": Vector2(3100, 310), "left": 2900, "right": 3380, "kind": "bird"},
 ]
 
 const DECORATIONS: Array = [
@@ -241,6 +241,7 @@ func _spawn_coins() -> void:
 
 func _spawn_enemies() -> void:
 	for data in ENEMIES:
+		var kind: String = data.get("kind", "spider")
 		var enemy := CharacterBody2D.new()
 		enemy.position = data["pos"]
 		enemy.set_script(ENEMY_SCENE)
@@ -250,20 +251,30 @@ func _spawn_enemies() -> void:
 
 		var shape := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(28, 28)
+		rect.size = Vector2(30, 28)
 		shape.shape = rect
-		shape.position = Vector2(0, -14)
+		shape.position = Vector2(0, -16)
 		enemy.add_child(shape)
 
-		var texture := PixelAssets.TEX_ENEMY_SLIME
-		if data.get("kind", "slime") == "robot":
-			texture = PixelAssets.TEX_ENEMY_ROBOT
-		var sprite := PixelAssets.make_character_sprite(texture)
+		var texture := PixelAssets.TEX_SPIDER
+		var fps := 8.0
+		var opts := {"speed": 80.0, "sound": "spider"}
+		match kind:
+			"bird":
+				texture = PixelAssets.TEX_BIRD
+				fps = 10.0
+				opts = {"flying": true, "speed": 130.0, "bob": 26.0, "bob_speed": 2.4, "sound": "bird"}
+			"fish":
+				texture = PixelAssets.TEX_FISH
+				fps = 6.0
+				opts = {"flying": true, "speed": 95.0, "bob": 34.0, "bob_speed": 3.0, "sound": "fish"}
+
+		var sprite := PixelAssets.make_strip_anim(texture, PixelAssets.PLAYER_FRAME, fps)
 		sprite.name = "Sprite"
-		sprite.position = Vector2(0, -PixelAssets.TILE_WORLD * 0.5)
+		sprite.position = Vector2(0, -PixelAssets.FEET_OFFSET)
 		enemy.add_child(sprite)
 
-		enemy.setup(data["left"], data["right"], randf() > 0.5)
+		enemy.setup(data["left"], data["right"], randf() > 0.5, opts)
 		add_child(enemy)
 
 

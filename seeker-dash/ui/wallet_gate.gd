@@ -115,18 +115,24 @@ func _ready() -> void:
 	stack.add_child(_address_label)
 
 	_connect_button = _make_button("Connect Wallet", Color(0.28, 0.58, 0.32))
-	_connect_button.pressed.connect(func():
-		Sfx.play("confirm")
-		emit_signal("connect_pressed"))
+	_connect_button.pressed.connect(_on_connect_button)
 	stack.add_child(_connect_button)
 
 	_skip_button = _make_button("Play without wallet", Color(0.22, 0.26, 0.34))
-	_skip_button.pressed.connect(func():
-		Sfx.play("confirm")
-		emit_signal("skip_pressed"))
+	_skip_button.pressed.connect(_on_skip_button)
 	stack.add_child(_skip_button)
 
 	set_state(State.IDLE)
+
+
+func _on_connect_button() -> void:
+	Sfx.play("confirm")
+	emit_signal("connect_pressed")
+
+
+func _on_skip_button() -> void:
+	Sfx.play("confirm")
+	emit_signal("skip_pressed")
 
 
 func set_bridge_available(available: bool) -> void:

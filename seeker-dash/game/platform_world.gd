@@ -301,24 +301,24 @@ func _spawn_player() -> void:
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(22, 30)
+	rect.size = Vector2(30, 40)
 	shape.shape = rect
-	shape.position = Vector2(0, -15)
+	shape.position = Vector2(0, -20)
 	player.add_child(shape)
 
-	var sprite := PixelAssets.make_character_sprite(PixelAssets.TEX_PLAYER)
+	var sprite := PixelAssets.make_player_sprite()
 	sprite.name = "Sprite"
-	sprite.position = Vector2(0, -PixelAssets.TILE_WORLD * 0.5)
+	sprite.position = Vector2(0, -PixelAssets.PLAYER_FEET_OFFSET)
 	player.add_child(sprite)
 
 	var stomp := Area2D.new()
 	stomp.name = "StompZone"
-	stomp.position = Vector2(0, -8)
+	stomp.position = Vector2(0, -6)
 	stomp.collision_layer = 0
 	stomp.collision_mask = 4
 	var stomp_shape := CollisionShape2D.new()
 	var stomp_rect := RectangleShape2D.new()
-	stomp_rect.size = Vector2(18, 8)
+	stomp_rect.size = Vector2(26, 12)
 	stomp_shape.shape = stomp_rect
 	stomp.add_child(stomp_shape)
 	player.add_child(stomp)
@@ -385,6 +385,7 @@ func _reset_player() -> void:
 	player.velocity = Vector2.ZERO
 	player.sprite.modulate = Color.WHITE
 	player.sprite.flip_h = false
+	player.sprite.play("idle")
 
 
 func _on_flag_reached() -> void:

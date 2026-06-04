@@ -206,12 +206,14 @@ static func build_ground(parent: Node, size: Vector2) -> void:
 # UI theme (crisp pixel font)
 # ----------------------------------------------------------------------
 static func make_ui_theme(base_size: int = 26) -> Theme:
-	if FONT is FontFile:
-		FONT.antialiasing = TextServer.FONT_ANTIALIASING_NONE
-		FONT.hinting = TextServer.HINTING_NONE
-		FONT.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
-		FONT.force_autohinter = false
+	var font: Font = FONT
+	if font is FontFile:
+		var ff := font as FontFile
+		ff.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+		ff.hinting = TextServer.HINTING_NONE
+		ff.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+		ff.force_autohinter = false
 	var theme := Theme.new()
-	theme.default_font = FONT
+	theme.default_font = font
 	theme.default_font_size = base_size
 	return theme

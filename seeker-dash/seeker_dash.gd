@@ -47,15 +47,22 @@ var best_time := 9999.0
 var best_coins := 0
 var pending_auto_start := false
 
+# Persisted login: "" (ask), "connected" (remembered wallet), or "guest".
+var _wallet_mode := ""
+var _remembered_address := ""
+var _remembered_token := ""
+var _pending_sign := false
+var _pending_sign_stats := {}
+
 
 func _ready() -> void:
 	randomize()
-	_load_best()
+	_load_state()
 	_build_ui()
 	_setup_world()
 	_setup_wallet()
 	_refresh_hud()
-	_show_wallet_gate()
+	_resume_or_gate()
 
 
 func _process(_delta: float) -> void:
@@ -360,6 +367,18 @@ func _show_wallet_gate() -> void:
 	wallet_gate.show_gate()
 
 
+# Skip the login gate when a previous session is remembered.
+func _resume_or_gate() -> void:
+	if _wallet_mode == "connected" and wallet_adapter.is_available():
+		_refresh_wallet_ui()
+		_start_run()
+		_toast("Welcome back — wallet remembered")
+	elif _wallet_mode == "guest":
+		_start_run()
+	else:
+		_show_wallet_gate()
+
+
 func _set_playing_ui(active: bool) -> void:
 	playing = active
 	touch_controls.visible = active
@@ -392,13 +411,15 @@ func _on_gate_connect_pressed() -> void:
 
 func _on_gate_skip_pressed() -> void:
 	pending_auto_start = false
+	_wallet_mode = "guest"
+	_save_state()
 	wallet_gate.hide_gate()
 	_start_run()
 
 
 func _on_play_again_pressed() -> void:
 	Sfx.play("confirm")
-	if wallet_adapter.is_wallet_connected():
+	if _wallet_mode != "":
 		_start_run()
 	else:
 		_show_wallet_gate()
@@ -439,7 +460,7 @@ func _on_level_finished(stats: Dictionary) -> void:
 		best_coins = coin_count
 		improved = true
 	if improved:
-		_save_best()
+		_save_state()
 
 	results_label.text = "TIME %0.1fs\n%d COINS   %d STARS\n%d STOMPS   %d DEATHS" % [
 		time, coin_count, star_count, stomp_count, death_count
@@ -451,9 +472,19 @@ func _on_level_finished(stats: Dictionary) -> void:
 
 
 func _sign_level_clear(stats: Dictionary) -> void:
-	if not wallet_adapter.is_wallet_connected():
+	if wallet_adapter.is_wallet_connected():
+		_do_sign(stats)
+	elif _wallet_mode == "connected" and wallet_adapter.is_available():
+		# Remembered session: silently reauthorize, then sign once reconnected.
+		_pending_sign = true
+		_pending_sign_stats = stats
+		_toast("Reconnecting wallet to sign...")
+		wallet_adapter.connect_wallet()
+	else:
 		_toast("Connect a wallet to sign your level-clear proof.")
-		return
+
+
+func _do_sign(stats: Dictionary) -> void:
 	awaiting_sign = true
 	_toast("Signing level clear...")
 	wallet_adapter.sign_message(
@@ -469,15 +500,31 @@ func _sign_level_clear(stats: Dictionary) -> void:
 
 func _on_disconnect_pressed() -> void:
 	Sfx.play("confirm")
+	_forget_session()
 	wallet_adapter.disconnect_wallet()
+	_refresh_wallet_ui()
+	if not playing:
+		_show_wallet_gate()
+		wallet_gate.set_state(wallet_gate.State.IDLE)
 
 
 func _on_connected(address: String) -> void:
+	_wallet_mode = "connected"
+	_remembered_address = address
+	_remembered_token = wallet_adapter.get_auth_token()
+	_save_state()
+
 	if playing:
 		wallet_gate.hide_gate()
 	else:
 		wallet_gate.set_state(wallet_gate.State.CONNECTED, _short_address(address))
 	_refresh_wallet_ui()
+
+	if _pending_sign:
+		_pending_sign = false
+		_do_sign(_pending_sign_stats)
+		return
+
 	if pending_auto_start:
 		await get_tree().create_timer(0.45).timeout
 		pending_auto_start = false
@@ -486,7 +533,11 @@ func _on_connected(address: String) -> void:
 
 func _on_connection_failed(error: String) -> void:
 	pending_auto_start = false
-	wallet_gate.set_state(wallet_gate.State.ERROR, error)
+	if _pending_sign:
+		_pending_sign = false
+		_toast("Wallet reconnect failed: %s" % error)
+	else:
+		wallet_gate.set_state(wallet_gate.State.ERROR, error)
 	_refresh_wallet_ui()
 
 
@@ -504,6 +555,7 @@ func _on_sign_failed(error: String) -> void:
 
 func _on_disconnected() -> void:
 	pending_auto_start = false
+	_forget_session()
 	_refresh_wallet_ui()
 	if playing:
 		return
@@ -511,13 +563,22 @@ func _on_disconnected() -> void:
 	wallet_gate.set_state(wallet_gate.State.IDLE)
 
 
+func _forget_session() -> void:
+	_pending_sign = false
+	_wallet_mode = ""
+	_remembered_address = ""
+	_remembered_token = ""
+	_save_state()
+
+
 func _refresh_wallet_ui() -> void:
-	var connected := wallet_adapter != null and wallet_adapter.is_wallet_connected()
-	disconnect_button.visible = connected
-	if connected:
-		wallet_chip.text = _short_address(wallet_adapter.get_connected_address())
-	else:
-		wallet_chip.text = "No wallet"
+	var address := ""
+	if wallet_adapter != null and wallet_adapter.is_wallet_connected():
+		address = wallet_adapter.get_connected_address()
+	elif _wallet_mode == "connected":
+		address = _remembered_address
+	disconnect_button.visible = address != ""
+	wallet_chip.text = _short_address(address) if address != "" else "No wallet"
 
 
 func _refresh_hud() -> void:
@@ -541,23 +602,41 @@ func _short_address(address: String) -> String:
 	return address.substr(0, 4) + "…" + address.substr(address.length() - 4)
 
 
-func _load_best() -> void:
+func _load_state() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return
 	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if f == null:
 		return
-	best_time = float(f.get_line().strip_edges())
-	best_coins = int(f.get_line().strip_edges())
+	var text := f.get_as_text()
 	f.close()
+	var data = JSON.parse_string(text)
+	if data is Dictionary:
+		best_time = float(data.get("best_time", best_time))
+		best_coins = int(data.get("best_coins", best_coins))
+		_wallet_mode = String(data.get("wallet_mode", ""))
+		_remembered_address = String(data.get("wallet_address", ""))
+		_remembered_token = String(data.get("wallet_token", ""))
+	else:
+		# Legacy two-line format (best_time / best_coins).
+		var lines := text.split("\n", false)
+		if lines.size() >= 1:
+			best_time = float(lines[0].strip_edges())
+		if lines.size() >= 2:
+			best_coins = int(lines[1].strip_edges())
 
 
-func _save_best() -> void:
+func _save_state() -> void:
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_line(str(best_time))
-	f.store_line(str(best_coins))
+	f.store_string(JSON.stringify({
+		"best_time": best_time,
+		"best_coins": best_coins,
+		"wallet_mode": _wallet_mode,
+		"wallet_address": _remembered_address,
+		"wallet_token": _remembered_token,
+	}))
 	f.close()
 
 
